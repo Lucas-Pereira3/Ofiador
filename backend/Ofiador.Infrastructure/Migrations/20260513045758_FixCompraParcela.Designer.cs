@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ofiador.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Ofiador.Infrastructure.Data;
 namespace Ofiador.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513045758_FixCompraParcela")]
+    partial class FixCompraParcela
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -104,17 +107,9 @@ namespace Ofiador.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("idCompraParcela"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
                     b.Property<DateTime?>("DataPagamento")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("data_pagamento");
-
-                    b.Property<DateTime>("DataVencimento")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("data_vencimento");
 
                     b.Property<int>("IdCompra")
                         .HasColumnType("integer")
@@ -128,13 +123,9 @@ namespace Ofiador.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("numero_parcelas");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                    b.Property<bool>("Pago")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pago");
 
                     b.Property<decimal>("ValorParcela")
                         .HasColumnType("numeric")
@@ -317,7 +308,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.HasOne("Ofiador.Domain.Models.Fatura", "Fatura")
                         .WithMany("CompraParcelas")
                         .HasForeignKey("IdFatura")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Compra");

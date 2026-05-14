@@ -17,11 +17,12 @@ namespace Ofiador.Domain.Models
         [Column("vencimento")]
         public DateTime Vencimento { get; set; }
 
+        [Column("parcelas")]
+        public int Parcelas { get; set; }
+
         [Column("status")]
         public string Status { get; set; } = "Pendente";
 
-        [Column("parcelas")]
-        public int Parcelas { get; set; }
 
         [Column("mes_referencia")]
         public DateTime MesReferencia { get; set; }
@@ -34,6 +35,6 @@ namespace Ofiador.Domain.Models
         public Cliente? Cliente { get; set; }
 
         [JsonIgnore]
-        public List<Compra> Compras { get; set; } = new List<Compra>();
+        public List<CompraParcela> CompraParcelas { get; set; } = new();
     }
 }

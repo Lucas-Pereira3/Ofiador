@@ -18,8 +18,6 @@ namespace Ofiador.Domain.Models
 
         public Empresa? Empresa { get; set; }
 
-        public int? IdFatura { get; set; }
-
-        public Fatura? Fatura { get; set; }
+        public List<CompraParcela> CompraParcelas { get; set; }= new();
     }
 }

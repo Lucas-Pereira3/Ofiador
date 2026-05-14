@@ -42,9 +42,21 @@ CREATE TABLE compra (
 	data_venciomento DATE,
 	parcelas INT,
 	id_cliente INT,
-	id_fatura INT,
+	id_empresa INT,
 	FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
-	FOREIGN KEY (id_fatura) REFERENCES fatura(id_fatura)
+	FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa)
+);
+
+CREATE TABLE compra_parcela(
+	id_compra_parcela SERIAL PRIMARY KEY,
+	id_compra INT NOT NULL,
+	id_fatura INT NOT NULL,
+	numero_parcelas INT NOT NULL,
+	valor_parcela NUMERIC(10,2) NOT NULL,
+	pago BOOLEAN NOT NULL DEFAULT FALSE,
+	data_pagamento TIMESTAMP NULL,
+	CONSTRAINT fk_parcela_compra FOREIGN KEY (id_compra) REFERENCES compras(id_compra),
+	CONSTRAINT fk_parcela_fatura FOREIGN KEY (id_fatura) REFERENCES faturas(id_fatura)
 );
 
 CREATE TABLE pagamento (

@@ -7,6 +7,10 @@ public class CompraDTOs
 
     public string Cliente { get; set; } = string.Empty;
 
+    public int Parcelas { get; set; }
+
     public string Empresa { get; set; }= string.Empty;
-}
+
+    public List<ParcelaDTO> ParcelasCompra { get; set; }= new();
+    }
 }

@@ -40,7 +40,7 @@ namespace Ofiador.API.Controllers
         {
             var faturas= _context.Faturas
                 .Include(f=> f.Cliente)
-                .Include(f=> f.Compras)
+                .Include(f=> f.CompraParcelas).ThenInclude(cp => cp.Compra)
                 .ToList();
 
             return Ok(faturas);

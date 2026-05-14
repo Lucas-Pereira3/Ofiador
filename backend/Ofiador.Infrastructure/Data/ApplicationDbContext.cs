@@ -52,11 +52,18 @@ namespace Ofiador.Infrastructure.Data
                 .WithMany()
                 .HasForeignKey(c => c.IdEmpresa);
 
-            modelBuilder.Entity<Compra>()
-                .HasOne(c => c.Fatura)
-                .WithMany(f => f.Compras)
-                .HasForeignKey(c => c.IdFatura)
-                .IsRequired(false);    
+            //compra Parcela
+            modelBuilder.Entity<CompraParcela>()
+                .HasOne(cp => cp.Compra)
+                .WithMany(c => c.CompraParcelas)
+                .HasForeignKey(cp => cp.IdCompra)
+                .OnDelete(DeleteBehavior.Cascade); 
+
+            modelBuilder.Entity<CompraParcela>()
+                .HasOne(cp => cp.Fatura)
+                .WithMany(f => f.CompraParcelas)
+                .HasForeignKey(cp => cp.IdFatura)
+                .OnDelete(DeleteBehavior.Restrict); 
             // modelo Fatura
 
             modelBuilder.Entity<Fatura>()
@@ -84,7 +91,7 @@ namespace Ofiador.Infrastructure.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Compra> Compras { get; set; }
-       
+        public DbSet<CompraParcela> CompraParcelas { get; set; }
         public DbSet<Fatura> Faturas { get; set; }
         public DbSet<Pagamento> Pagamentos { get; set; }
     }
