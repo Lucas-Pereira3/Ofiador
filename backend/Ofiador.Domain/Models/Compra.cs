@@ -10,6 +10,8 @@ namespace Ofiador.Domain.Models
 
         public int Parcelas {  get; set; }
 
+        public int ParcelasPagas { get; set; }
+
         public int IdCliente { get; set; }
 
         public Cliente? Cliente {  get; set; }

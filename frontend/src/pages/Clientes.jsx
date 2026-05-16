@@ -79,7 +79,7 @@ const Clientes = () => {
 
   // Função para determinar o status do cliente
   const getStatusInfo = (cliente) => {
-    const divida = cliente.dividaTotal || 0;
+    const divida = cliente.divida || 0;
     const limite = cliente.limite;
 
     if (!limite || limite === 0) {
@@ -120,7 +120,7 @@ const Clientes = () => {
     const matchesCpf = cliente.cpf_Cnpj?.includes(searchCpf);
 
     // Filtro por empresa
-    const empresaNome = cliente.empresa?.nome?.toLowerCase() || "";
+    const empresaNome = cliente.empresa?.toLowerCase() || "";
     const matchesEmpresa =
       !searchEmpresa || empresaNome.includes(searchEmpresa.toLowerCase());
 
@@ -601,7 +601,7 @@ const Clientes = () => {
                 currentClientes.map((cliente) => {
                   const status = getStatusInfo(cliente);
                   const disponivel =
-                    cliente.limite - (cliente.dividaTotal || 0);
+                    cliente.limite - (cliente.divida || 0);
                   return (
                     <tr
                       key={cliente.idCliente}
@@ -619,7 +619,7 @@ const Clientes = () => {
                         {cliente.cpf_Cnpj ? formatCPF(cliente.cpf_Cnpj) : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {cliente.empresa?.nome || "-"}
+                        {cliente.empresa || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {cliente.telefone || "-"}
@@ -634,7 +634,7 @@ const Clientes = () => {
                         className="px-6 py-4 whitespace-nowrap text-sm font-semibold"
                         style={{ color: status.color }}
                       >
-                        {formatCurrency(cliente.dividaTotal || 0)}
+                        {formatCurrency(cliente.divida || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

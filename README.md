@@ -64,15 +64,18 @@ Done.
 ```
 Ofiador/
 ├── backend/
-│   ├── Ofiador.API/              # ASP.NET Core 10.0
+│   ├── Ofiador.API/              # Camada de apresentação (ASP.NET Core 10.0)
 │   │   ├── Controllers/          # Endpoints da API
-│   │   ├── Services/             # Lógica de negócio
-│   │   ├── Models/               # Entidades de domínio
-│   │   ├── Data/                 # DbContext e mapeamentos
 │   │   ├── DTOs/                 # Data Transfer Objects
-│   │   ├── Migrations/           # Migrações do EF Core
 │   │   ├── Program.cs            # Configuração da aplicação
 │   │   └── Dockerfile
+│   ├── Ofiador.Application/      # Serviços de aplicação e casos de uso
+│   │   └── Services/             # Implementações da lógica de aplicação
+│   ├── Ofiador.Domain/           # Entidades, agregados e regras de domínio
+│   │   └── Models/
+│   ├── Ofiador.Infrastructure/   # Persistência (EF Core), DbContext, Migrations
+│   │   ├── Data/
+│   │   └── Migrations/
 │   └── Dockerfile
 ├── frontend/                      # React + Vite
 │   ├── src/

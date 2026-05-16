@@ -5,7 +5,7 @@ namespace Ofiador.Domain.Models
     public int IdPagamento{get; set;}
     public DateTime Data_Pagamento{get; set;}
 
-    public decimal Valor_Pago{get; set;}
+    public decimal ValorPago{get; set;}
 
     public int IdFatura {get; set;}
 

@@ -5,6 +5,7 @@ using Ofiador.API.DTOs;
 using Ofiador.Application.Services;
 using Ofiador.Domain.Models;
 using Ofiador.Infrastructure.Data;
+using System.Linq.Expressions;
 namespace Ofiador.API.Controllers
 {
     [Authorize]
@@ -25,66 +26,48 @@ namespace Ofiador.API.Controllers
         [HttpPost]
         public IActionResult CriarCompra([FromBody] Compra compra)
         {
-            
-
-            if (!ModelState.IsValid) 
-            { 
-                return BadRequest(ModelState);
-            }
-
-            //Verifica se cliente existe
-            var clienteExiste = _context.Clientes.Any(c => c.IdCliente == compra.IdCliente);
-
-            if (!clienteExiste)
+            try
             {
-                return NotFound(new
+                var compraCriada = _compraService.CriarCompra(compra);
+
+                var response = new CompraDTOs
                 {
-                    erro = "Cliente não encontrado"
+                    IdCompra = compra.IdCompra,
+
+                    Valor_Total = compra.Valor_Total,
+
+                    Parcelas = compra.Parcelas,
+
+                    Cliente = compra.Cliente?.Nome ?? "",
+
+                    Empresa = compra.Empresa?.Nome ?? "",
+
+                    ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
+                    {
+                        NumeroParcela = cp.NumeroParcela,
+                        ValorParcela = cp.ValorParcela,
+                    }).ToList()
+                };
+                return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    erro = ex.Message,
                 });
             }
 
-            //Verifica se Empresa Existe
-            var empresaExiste = _context.Empresas.Any(e => e.IdEmpresa == compra.IdEmpresa);
-
-            if (!empresaExiste)
-            {
-                return NotFound(new
-                {
-                    erro = "Empresa não encontrada"
-                });
-            }
-
-            var compraCriada = _compraService.CriarCompra(compra);
-
-            var response = new CompraDTOs
-            {
-                IdCompra = compra.IdCompra,
-
-                Valor_Total = compra.Valor_Total,
-
-                Parcelas = compra.Parcelas,
-
-                Cliente = compra.Cliente?.Nome ?? "",
-
-                Empresa = compra.Empresa?.Nome ?? "",
-
-                ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
-                {
-                    NumeroParcela = cp.NumeroParcela,
-                    ValorParcela = cp.ValorParcela,
-                }).ToList()
-            };
-            return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
         }
 
         [HttpGet]
-        public IActionResult ListarCompras() 
+        public IActionResult ListarCompras()
         {
             var compras = _context.Compras
                 .Include(c => c.Cliente)
                 .Include(c => c.Empresa)
-                .Include(c=>c.CompraParcelas)
-                .Select(c=> new CompraDTOs
+                .Include(c => c.CompraParcelas)
+                .Select(c => new CompraDTOs
                 {
                     IdCompra = c.IdCompra,
 
@@ -94,15 +77,22 @@ namespace Ofiador.API.Controllers
 
                     Cliente = c.Cliente != null
                         ? c.Cliente.Nome
-                        :string.Empty,
-                    Empresa = c.Cliente !=null && c.Cliente.Empresa != null
+                        : string.Empty,
+                    Empresa = c.Cliente != null && c.Cliente.Empresa != null
                         ? c.Cliente.Empresa.Nome
-                        :string.Empty,
+                        : string.Empty,
 
-                    ParcelasCompra = c.CompraParcelas.Select(cp => new ParcelaDTO{
-                           NumeroParcela=cp.NumeroParcela,
+                    ParcelasCompra = c.CompraParcelas.Select(cp => new ParcelaDTO
+                    {
+                        NumeroParcela = cp.NumeroParcela,
 
-                           ValorParcela=cp.ValorParcela,
+                        ValorParcela = cp.ValorParcela,
+
+                        Pago = cp.Pago,
+
+                        Status = cp.Status.ToString(),
+
+                        Datapagamento = cp.DataPagamento
                     }).ToList()
                 }).ToList();
 
@@ -114,7 +104,7 @@ namespace Ofiador.API.Controllers
         {
             var compra = _context.Compras
                 .Include(c => c.Cliente)
-                .Include (c=>c.Empresa)
+                .Include(c => c.Empresa)
                 .Include(c => c.CompraParcelas)
                 .FirstOrDefault(c => c.IdCompra == id);
 
@@ -139,10 +129,73 @@ namespace Ofiador.API.Controllers
                 {
                     NumeroParcela = cp.NumeroParcela,
                     ValorParcela = cp.ValorParcela,
+
+                    Pago = cp.Pago,
+
+                    Status = cp.Status.ToString(),
+
+                    Datapagamento = cp.DataPagamento
                 }).ToList()
             };
 
             return Ok(response);
+        }
+
+        [HttpGet("cliente/{clienteId}")]
+        public IActionResult BuscarComprasPorCliente(int clienteId)
+        {
+            //verificar cliente
+            var clienteExiste = _context.Clientes.Any(c => c.IdCliente == clienteId);
+
+            if (!clienteExiste)
+            {
+                return NotFound(new
+                {
+                    erro = "Cliente não encontrado"
+                });
+            }
+
+            var compra = _context.Compras
+                .Where(c => c.IdCliente == clienteId)
+
+                .Include(c => c.Cliente)
+
+                .Include(c => c.Empresa)
+
+                .Include(c => c.CompraParcelas)
+
+                .Select(c => new CompraDTOs
+                {
+                    IdCompra = c.IdCompra,
+
+                    Valor_Total = c.Valor_Total,
+
+                    Parcelas = c.Parcelas,
+
+                    Cliente = c.Cliente != null
+                        ? c.Cliente.Nome
+                        : string.Empty,
+
+                    Empresa = c.Empresa != null
+                        ? c.Empresa.Nome
+                        : string.Empty,
+
+                    ParcelasCompra = c.CompraParcelas
+                        .Select(cp => new ParcelaDTO
+                        {
+                            NumeroParcela = cp.NumeroParcela,
+
+                            ValorParcela = cp.ValorParcela,
+
+                            Pago = cp.Pago,
+
+                            Status = cp.Status.ToString(),
+
+                            Datapagamento = cp.DataPagamento
+                        }).ToList()
+                }).ToList();
+
+            return Ok(compra);
         }
     }
 }

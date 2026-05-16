@@ -51,6 +51,9 @@ namespace Ofiador.Infrastructure.Data
                 .HasOne(c => c.Empresa)
                 .WithMany()
                 .HasForeignKey(c => c.IdEmpresa);
+            modelBuilder.Entity<Compra>()
+                .Property(c => c.ParcelasPagas)
+                .HasDefaultValue(0);
 
             //compra Parcela
             modelBuilder.Entity<CompraParcela>()

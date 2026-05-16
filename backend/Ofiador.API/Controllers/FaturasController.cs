@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Models;
+using Ofiador.API.DTOs;
+using Ofiador.Application.Services;
 
 namespace Ofiador.API.Controllers
 {
@@ -10,28 +12,34 @@ namespace Ofiador.API.Controllers
     public class FaturasController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly FaturaService _faturaService;
 
-        public FaturasController(ApplicationDbContext context)
+        public FaturasController(ApplicationDbContext context, FaturaService faturaService)
         {
             _context = context;
+            _faturaService = faturaService;
         }
 
         [HttpPost]
-        public IActionResult CriarFatura([FromBody] Fatura fatura)
+        public IActionResult CriarFatura([FromBody] FaturaDTOs dto)
         {
-            Console.WriteLine("heeeeee");
+
             try
             {
-                _context.Faturas.Add(fatura);
-                _context.SaveChanges();
+                var fatura = _faturaService
+                    .GerarFatura(
+                        dto.IdCliente,
+                        dto.MesReferencia
+                    );
 
-                return Ok(fatura);
+                return Created("", fatura);
             }
-            catch (Exception ex) 
-            { 
-                Console.WriteLine
-                    (ex.ToString());
-                return BadRequest(ex.Message);
+            catch (Exception ex)
+            {
+                return BadRequest(new 
+                { 
+                    erro=ex.Message 
+                });
             }
         }
 

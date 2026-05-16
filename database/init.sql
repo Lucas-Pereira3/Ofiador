@@ -41,6 +41,7 @@ CREATE TABLE compra (
 	valor_total DECIMAL(10,2),
 	data_venciomento DATE,
 	parcelas INT,
+	parcelas_pagas INT,
 	id_cliente INT,
 	id_empresa INT,
 	FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
@@ -62,7 +63,7 @@ CREATE TABLE compra_parcela(
 CREATE TABLE pagamento (
 	id_pagamento SERIAL PRIMARY KEY,
 	data_pagamento DATE,
-	valor_pago DECIMAL(10,2),
+	valorpago DECIMAL(10,2),
 	id_fatura INT,
 	FOREIGN KEY (id_fatura) REFERENCES fatura(id_fatura)
 );

@@ -3,6 +3,7 @@ using Ofiador.Domain.Models;
 using Ofiador.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Ofiador.Application.Services
@@ -18,6 +19,31 @@ namespace Ofiador.Application.Services
         }
         public Compra CriarCompra(Compra compra)
         {
+            var cliente = _context.Clientes.FirstOrDefault(c => c.IdCliente == compra.IdCliente);
+
+            if (cliente == null) 
+            {
+                throw new Exception("Cliente não encontrado");
+            }
+
+            //Verifica se Empresa Existe
+            var empresa = _context.Empresas.FirstOrDefault(e => e.IdEmpresa == compra.IdEmpresa);
+
+            if (empresa == null)
+            {
+                throw new Exception("Empresa não encontrada");
+            }
+
+            var dividaAtual = _context.Faturas
+                .Where(f =>
+                    f.IdCliente == compra.IdCliente &&
+                    f.Status != "PAGO").Sum(f => (decimal?)f.Total) ?? 0;
+
+            if(dividaAtual + compra.Valor_Total > cliente.Limite)
+            {
+                throw new Exception("Limite do cliente excedido");
+            } 
+
             _context.Compras.Add(compra);
 
             _context.SaveChanges();
@@ -66,6 +92,7 @@ namespace Ofiador.Application.Services
                     valorAtual = compra.Valor_Total - ((compra.Parcelas - 1) * valorParcela);
                 }
 
+                
                 fatura.Total += valorAtual;
 
                 fatura.Parcelas ++;

@@ -25,6 +25,9 @@ namespace Ofiador.API.DTOs
 
         public int IdEmpresa {get; set;}
 
-        public string Empresa { get; set; } = string.Empty;
+       
+        public string? Empresa { get; set; } 
+
+        public decimal Divida { get; set; }
     }
 }

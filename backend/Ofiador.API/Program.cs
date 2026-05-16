@@ -28,6 +28,8 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<CompraService>();
+builder.Services.AddScoped<PagamentoService>();
+builder.Services.AddScoped<FaturaService>();
 //====================== JWT ========================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

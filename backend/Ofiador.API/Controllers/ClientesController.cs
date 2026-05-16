@@ -50,7 +50,12 @@ namespace Ofiador.API.Controllers
                 Limite = c.Limite,
                 Telefone = c.Telefone,
                 IdEmpresa = c.IdEmpresa,
-                Empresa = c.Empresa.Nome
+                Empresa = c.Empresa !=null ? c.Empresa.Nome : string.Empty,
+                Divida = _context.Faturas
+                .Where(f => 
+                    f.IdCliente== c.IdCliente &&
+                    f.Status.ToUpper() != "PAGO").
+                    Sum(f => (decimal?)f.Total)??0
             }).ToList();
 
             return Ok(clientes);
@@ -72,7 +77,9 @@ namespace Ofiador.API.Controllers
                     Limite = c.Limite,
                     Telefone = c.Telefone,
                     IdEmpresa = c.IdEmpresa,
-                    Empresa = c.Empresa.Nome,
+                    Empresa = c.Empresa != null
+                            ? c.Empresa.Nome
+                            : string.Empty,
                 }).FirstOrDefault();
 
             if (cliente == null)

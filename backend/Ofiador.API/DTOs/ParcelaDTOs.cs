@@ -5,7 +5,11 @@
         public int NumeroParcela { get; set; }
 
         public decimal ValorParcela { get; set; }
+        
+        public bool Pago { get; set; }
 
-        public string MesReferencia { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+
+        public DateTime? Datapagamento { get; set; } 
     }
 }

@@ -44,6 +44,9 @@ namespace Ofiador.Domain.Models
         [Column("data_pagamento")]
         public DateTime? DataPagamento { get; set; }
 
+        [Column("pago")]
+        public bool Pago { get; set; } = false;
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
