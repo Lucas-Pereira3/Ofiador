@@ -1,4 +1,4 @@
-namespace Ofiador.Domain.Models
+namespace Ofiador.Domain.Entities
 {
     public class Empresa
     {

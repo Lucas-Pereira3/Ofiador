@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
-using Ofiador.Domain.Models;
-using Ofiador.API.DTOs;
+using Ofiador.Domain.Entities;
+using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
 
 namespace Ofiador.API.Controllers

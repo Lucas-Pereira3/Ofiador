@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Ofiador.API.DTOs;
+using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
 using System.Linq.Expressions;
 namespace Ofiador.API.Controllers

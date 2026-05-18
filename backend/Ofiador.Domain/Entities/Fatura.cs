@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace Ofiador.Domain.Models
+namespace Ofiador.Domain.Entities
 {
     [Table("fatura")]
     public class Fatura
