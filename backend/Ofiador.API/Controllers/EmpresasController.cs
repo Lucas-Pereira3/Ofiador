@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 using Ofiador.Application.Services;
 
 namespace Ofiador.API.Controllers

@@ -1,5 +1,5 @@
 using Ofiador.Infrastructure.Data;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 

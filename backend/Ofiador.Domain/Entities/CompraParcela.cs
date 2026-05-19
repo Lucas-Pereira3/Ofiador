@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Ofiador.Domain.Models
+namespace Ofiador.Domain.Entities
 {
 
     public enum Statusparcela

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Migrations;
 namespace Ofiador.Application.Services
 {

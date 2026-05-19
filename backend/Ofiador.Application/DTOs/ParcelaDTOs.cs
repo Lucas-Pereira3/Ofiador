@@ -1,4 +1,4 @@
-﻿namespace Ofiador.API.DTOs
+﻿namespace Ofiador.Application.DTOs
 {
     public class ParcelaDTO
     {
