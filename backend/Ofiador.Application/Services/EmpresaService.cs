@@ -11,9 +11,29 @@ public class EmpresaService
     {
         _context = context;
     }
+        //Telefone Valido
+        public bool TelefoneValido(string telefone)
+        {
+            //Remover oque não for numero
+            telefone = Regex.Replace(telefone, @"[^\d]", "");
 
-    //Validação do Cnpj
-    public bool CnpjValido(string cnpj)
+            //telefone fixo = 10
+            //celular = 11
+            if (telefone.Length < 10 || telefone.Length > 11)
+            {
+                return false;
+            }
+
+            //impede sequencia repetida
+            if (new string(telefone[0], telefone.Length) == telefone)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        //Validação do Cnpj
+        public bool CnpjValido(string cnpj)
     {
         cnpj = Regex.Replace(cnpj,@"[^\d]","");
 
@@ -92,6 +112,15 @@ public class EmpresaService
                 return (false, "Email é obrigatório");
             }
 
+            if (string.IsNullOrWhiteSpace(empresa.Telefone))
+            {
+                return (false, "Telefone é obrigatório");
+            }
+
+            if (!TelefoneValido(empresa.Telefone))
+            {
+                return (false, "Telefone inválido");
+            }
             if (!EmailValido(empresa.Email))
             {
                 return (false,"Email inválido");

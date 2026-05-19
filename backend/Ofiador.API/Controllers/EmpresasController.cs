@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ofiador.API.Controllers
 {
@@ -20,6 +21,7 @@ namespace Ofiador.API.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult CriarEmpresa([FromBody] Empresa empresa)
         {
@@ -56,6 +58,7 @@ namespace Ofiador.API.Controllers
             return Ok(empresa);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public IActionResult AtualizarEmpresa(int id, [FromBody] Empresa empresaAtualizada)
         {
@@ -85,6 +88,7 @@ namespace Ofiador.API.Controllers
             return Ok(empresa);
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public IActionResult ExcluirEmpresa(int id)
         {

@@ -8,7 +8,7 @@ using Ofiador.Infrastructure.Data;
 using System.Linq.Expressions;
 namespace Ofiador.API.Controllers
 {
-    [Authorize]
+    
     [ApiController]
     [Route("api/[controller]")]
     public class ComprasController : ControllerBase
@@ -23,6 +23,7 @@ namespace Ofiador.API.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult CriarCompra([FromBody] Compra compra)
         {
