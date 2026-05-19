@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 
 namespace Ofiador.Infrastructure.Data
 {

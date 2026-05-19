@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Ofiador.Infrastructure.Data;
-using Ofiador.Domain.Models;
+using Ofiador.Domain.Entities;
 
 namespace Ofiador.Application.Services{
 public class EmpresaService
