@@ -277,7 +277,11 @@ namespace Ofiador.Application.Services
             {
                 return(false,"CPF/CNPJ Invalido");
             }
-
+            //validar telefone
+            if (!TelefoneValido(clienteAtualizado.Telefone))
+            {
+                return (false, "Telefone invalida");
+            }
             //validar Email
             if (!EmailValido(clienteAtualizado.Email))
             {
