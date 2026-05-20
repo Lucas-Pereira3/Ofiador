@@ -8,7 +8,7 @@ using Ofiador.Infrastructure.Data;
 using System.Linq.Expressions;
 namespace Ofiador.API.Controllers
 {
-    
+     
     [ApiController]
     [Route("api/[controller]")]
     public class ComprasController : ControllerBase

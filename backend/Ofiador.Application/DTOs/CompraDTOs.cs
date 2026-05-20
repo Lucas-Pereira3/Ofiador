@@ -14,3 +14,4 @@ public class CompraDTOs
     public List<ParcelaDTO> ParcelasCompra { get; set; }= new();
     }
 }
+// DTO para as parcelas da compra
