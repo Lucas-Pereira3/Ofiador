@@ -37,6 +37,8 @@ namespace Ofiador.API.Controllers
 
                     Valor_Total = compra.Valor_Total,
 
+                    Data_Compra = compra.Data_Compra,
+
                     Parcelas = compra.Parcelas,
 
                     Cliente = compra.Cliente?.Nome ?? "",
@@ -46,7 +48,14 @@ namespace Ofiador.API.Controllers
                     ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
                     {
                         NumeroParcela = cp.NumeroParcela,
+
                         ValorParcela = cp.ValorParcela,
+
+                        Pago = cp.Pago,
+
+                        Status = cp.Status.ToString(),
+
+                        Datapagamento = cp.DataPagamento
                     }).ToList()
                 };
                 return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
@@ -73,6 +82,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 
@@ -119,6 +130,8 @@ namespace Ofiador.API.Controllers
                 IdCompra = compra.IdCompra,
 
                 Valor_Total = compra.Valor_Total,
+
+                Data_Compra = compra.Data_Compra,
 
                 Parcelas = compra.Parcelas,
 
@@ -170,6 +183,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 

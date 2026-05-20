@@ -1,16 +1,19 @@
-namespace Ofiador.Application.DTOs{
-public class CompraDTOs
+namespace Ofiador.Application.DTOs
 {
-    public int IdCompra { get; set; }
+    public class CompraDTOs
+    {
+        public int IdCompra { get; set; }
 
-    public decimal Valor_Total { get; set; }
+        public decimal Valor_Total { get; set; }
 
-    public string Cliente { get; set; } = string.Empty;
+        public DateTime Data_Compra { get; set; }
 
-    public int Parcelas { get; set; }
+        public string Cliente { get; set; } = string.Empty;
 
-    public string Empresa { get; set; }= string.Empty;
+        public int Parcelas { get; set; }
 
-    public List<ParcelaDTO> ParcelasCompra { get; set; }= new();
+        public string Empresa { get; set; } = string.Empty;
+
+        public List<ParcelaDTO> ParcelasCompra { get; set; } = new();
     }
 }

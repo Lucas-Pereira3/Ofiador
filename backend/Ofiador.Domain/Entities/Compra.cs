@@ -4,22 +4,25 @@ namespace Ofiador.Domain.Entities
     {
         public int IdCompra { get; set; }
 
-        public decimal Valor_Total {  get; set; }
+        public decimal Valor_Total { get; set; }
 
-        public DateTime Data_Compra {  get; set; }
+        public DateTime Data_Compra { get; set; }
 
-        public int Parcelas {  get; set; }
+        // NOVO CAMPO
+        public DateTime DataPrimeiroVencimento { get; set; }
+
+        public int Parcelas { get; set; }
 
         public int ParcelasPagas { get; set; }
 
         public int IdCliente { get; set; }
 
-        public Cliente? Cliente {  get; set; }
+        public Cliente? Cliente { get; set; }
 
         public int IdEmpresa { get; set; }
 
         public Empresa? Empresa { get; set; }
 
-        public List<CompraParcela> CompraParcelas { get; set; }= new();
+        public List<CompraParcela> CompraParcelas { get; set; } = new();
     }
 }
