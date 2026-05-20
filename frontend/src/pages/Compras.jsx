@@ -110,29 +110,22 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
     setLoading(true);
     try {
       const clienteData = {
-        nome: formData.nome.trim(),
+        nome: formData.nome,
         cpf_Cnpj: formData.cpf_Cnpj.replace(/[^\d]/g, ""),
-        telefone: formData.telefone || null,
-        email: formData.email || null,
-        endereco: formData.endereco || null,
+        telefone: formData.telefone.replace(/[^\d]/g, ""),
+        email: formData.email,
+        endereco: formData.endereco,
         limite: parseFloat(formData.limite),
         idEmpresa: parseInt(formData.idEmpresa),
       };
 
       const response = await api.post("/cliente", clienteData);
+
       toast.success("Cliente cadastrado com sucesso!");
       onClienteCriado(response.data);
       onClose();
-      setFormData({
-        nome: "",
-        cpf_Cnpj: "",
-        telefone: "",
-        email: "",
-        endereco: "",
-        limite: "",
-        idEmpresa: "",
-      });
     } catch (error) {
+      console.error("Erro ao registrar cliente:", error);
       toast.error(error.response?.data?.message || "Erro ao cadastrar cliente");
     } finally {
       setLoading(false);
@@ -300,19 +293,29 @@ const SimulacaoParcelas = ({
   valorTotal,
   numeroParcelas,
   dataPrimeiroVencimento,
+  dataCompra,
 }) => {
   const [parcelas, setParcelas] = useState([]);
 
   useEffect(() => {
-    if (valorTotal > 0 && numeroParcelas > 0 && dataPrimeiroVencimento) {
+    if (valorTotal > 0 && numeroParcelas > 0) {
       const valorParcela = valorTotal / numeroParcelas;
       const parcelasArray = [];
 
-      const [ano, mes, dia] = dataPrimeiroVencimento.split("-").map(Number);
-      const dataBase = new Date(ano, mes - 1, dia);
+      let dataBase;
+
+      if (dataPrimeiroVencimento) {
+        const [ano, mes, dia] = dataPrimeiroVencimento.split("-").map(Number);
+        dataBase = new Date(ano, mes - 1, dia);
+      } else if (dataCompra) {
+        const [ano, mes, dia] = dataCompra.split("-").map(Number);
+        dataBase = new Date(ano, mes, 1);
+      } else {
+        return;
+      }
 
       for (let i = 0; i < numeroParcelas; i++) {
-        const dataVencimento = new Date(ano, mes - 1, dia);
+        const dataVencimento = new Date(dataBase);
         if (i > 0) {
           dataVencimento.setMonth(dataVencimento.getMonth() + i);
         }
@@ -326,7 +329,7 @@ const SimulacaoParcelas = ({
     } else {
       setParcelas([]);
     }
-  }, [valorTotal, numeroParcelas, dataPrimeiroVencimento]);
+  }, [valorTotal, numeroParcelas, dataPrimeiroVencimento, dataCompra]);
 
   if (parcelas.length === 0) return null;
 
@@ -467,7 +470,6 @@ const Compras = () => {
   useEffect(() => {
     loadEmpresas();
     loadClientes();
-    loadAllCompras();
   }, []);
 
   useEffect(() => {
@@ -510,35 +512,16 @@ const Compras = () => {
     }
   };
 
-  const loadAllCompras = async () => {
+  const filterComprasByCliente = async (clienteId) => {
     try {
-      const response = await api.get("/compras");
-      console.log("Todas as compras:", response.data);
-      window.allCompras = response.data;
-    } catch (error) {
-      console.error("Erro ao carregar compras:", error);
-    }
-  };
-
-  const filterComprasByCliente = (clienteId) => {
-    if (window.allCompras) {
-      const filtered = window.allCompras.filter(
-        (c) => c.idCliente === parseInt(clienteId)
-      );
-      setCompras(filtered);
-      setLoadingCompras(false);
-    } else {
       setLoadingCompras(true);
-      api
-        .get(`/compras/cliente/${clienteId}`)
-        .then((response) => {
-          setCompras(response.data);
-          setLoadingCompras(false);
-        })
-        .catch((error) => {
-          console.error("Erro:", error);
-          setLoadingCompras(false);
-        });
+      const response = await api.get(`/compras/cliente/${clienteId}`);
+      setCompras(response.data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao carregar histórico");
+    } finally {
+      setLoadingCompras(false);
     }
   };
 
@@ -625,19 +608,33 @@ const Compras = () => {
         parcelas: parseInt(formData.parcelas),
       };
 
-      console.log("Enviando dados:", compraData);
-
-      const response = await api.post("/compras", compraData);
-      console.log("Resposta:", response.data);
-      toast.success("Compra registrada com sucesso!");
-
-      await loadAllCompras();
-      if (formData.idCliente) {
-        filterComprasByCliente(formData.idCliente);
+      if (
+        formData.dataPrimeiroVencimento &&
+        formData.dataPrimeiroVencimento.trim() !== ""
+      ) {
+        const [anoVenc, mesVenc, diaVenc] = formData.dataPrimeiroVencimento
+          .split("-")
+          .map(Number);
+        const dataPrimeiroVencimentoISO = new Date(
+          Date.UTC(anoVenc, mesVenc - 1, diaVenc, 12, 0, 0)
+        ).toISOString();
+        compraData.dataPrimeiroVencimento = dataPrimeiroVencimentoISO;
       }
 
+      console.log("Enviando dados:", compraData);
+      const response = await api.post("/compras", compraData);
+
+      toast.success("Compra registrada com sucesso!");
+
+      if (formData.idCliente) {
+        await filterComprasByCliente(formData.idCliente);
+      }
+
+      await loadClientes();
+
       setFormData({
-        ...formData,
+        idEmpresa: "",
+        idCliente: "",
         valor_Total: "",
         data_Compra: new Date().toISOString().split("T")[0],
         parcelas: 1,
@@ -647,10 +644,12 @@ const Compras = () => {
       console.error("Erro ao registrar compra:", error);
       console.error("Detalhes do erro:", error.response?.data);
 
-      if (error.response?.data?.message) {
+      if (error.response?.data?.erro) {
+        toast.error(error.response.data.erro);
+      } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else if (error.response?.data) {
-        toast.error(error.response.data);
+        toast.error(JSON.stringify(error.response.data));
       } else {
         toast.error("Erro ao registrar compra");
       }
@@ -665,7 +664,6 @@ const Compras = () => {
     toast.success("Cliente adicionado e selecionado automaticamente");
   };
 
-  // Paginação das compras
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCompras = compras.slice(indexOfFirstItem, indexOfLastItem);
@@ -719,7 +717,6 @@ const Compras = () => {
         </div>
       </div>
 
-      {/* Alerta de limite de crédito */}
       {limiteAlert.show && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
           <div className="flex items-center">
@@ -729,13 +726,11 @@ const Compras = () => {
         </div>
       )}
 
-      {/* Formulário de Compra */}
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-lg border border-gray-200 p-6 space-y-6"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Empresa */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Empresa *
@@ -762,7 +757,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Data da Compra */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Data da Compra *
@@ -783,7 +777,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Valor Total */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Valor Total * (R$)
@@ -807,7 +800,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Cliente com botão de cadastro rápido */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Cliente *
@@ -849,7 +841,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Data do Primeiro Vencimento */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Data do 1º Vencimento
@@ -862,11 +853,10 @@ const Compras = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C]"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Usada apenas para simulação das parcelas
+              Se não preenchido, será usado o primeiro dia do próximo mês
             </p>
           </div>
 
-          {/* Número de Parcelas */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nº de Parcelas *
@@ -888,20 +878,20 @@ const Compras = () => {
           </div>
         </div>
 
-        {/* Simulação de Parcelas */}
         <SimulacaoParcelas
           valorTotal={valorTotalNum}
           numeroParcelas={numeroParcelasNum}
           dataPrimeiroVencimento={formData.dataPrimeiroVencimento}
+          dataCompra={formData.data_Compra}
         />
 
-        {/* Botões */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => {
               setFormData({
-                ...formData,
+                idEmpresa: "",
+                idCliente: "",
                 valor_Total: "",
                 data_Compra: new Date().toISOString().split("T")[0],
                 parcelas: 1,
@@ -922,7 +912,6 @@ const Compras = () => {
         </div>
       </form>
 
-      {/* Histórico de Compras do Cliente */}
       {formData.idCliente && (
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
@@ -977,7 +966,6 @@ const Compras = () => {
                       </th>
                     </tr>
                   </thead>
-
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentCompras.map((compra) => (
                       <tr
@@ -997,7 +985,7 @@ const Compras = () => {
                           {compra.parcelas}x
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {compra.empresa?.nome || "-"}
+                          {compra.empresa || "-"}
                         </td>
                       </tr>
                     ))}
@@ -1005,7 +993,6 @@ const Compras = () => {
                 </table>
               </div>
 
-              {/* Paginação */}
               {totalPages > 1 && (
                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-sm text-gray-500">
@@ -1025,7 +1012,6 @@ const Compras = () => {
         </div>
       )}
 
-      {/* Modal de cadastro rápido de cliente */}
       <ClienteRapidoModal
         isOpen={showClienteModal}
         onClose={() => setShowClienteModal(false)}
