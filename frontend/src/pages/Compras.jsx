@@ -299,7 +299,7 @@ const SimulacaoParcelas = ({
 
   useEffect(() => {
     if (valorTotal > 0 && numeroParcelas > 0) {
-      const valorParcela = valorTotal / numeroParcelas;
+      const valorParcela = Number((valorTotal / numeroParcelas).toFixed(2));
       const parcelasArray = [];
 
       let dataBase;
@@ -316,13 +316,24 @@ const SimulacaoParcelas = ({
 
       for (let i = 0; i < numeroParcelas; i++) {
         const dataVencimento = new Date(dataBase);
+
         if (i > 0) {
           dataVencimento.setMonth(dataVencimento.getMonth() + i);
         }
+
+        let valorAtual = valorParcela;
+
+        // última parcela recebe a diferença
+        if (i === numeroParcelas - 1) {
+          valorAtual = Number(
+            (valorTotal - valorParcela * (numeroParcelas - 1)).toFixed(2)
+          );
+        }
+
         parcelasArray.push({
           numero: i + 1,
           vencimento: dataVencimento.toLocaleDateString("pt-BR"),
-          valor: valorParcela,
+          valor: valorAtual,
         });
       }
       setParcelas(parcelasArray);
@@ -684,20 +695,23 @@ const Compras = () => {
 
   const formatDate = (date) => {
     if (!date) return "-";
-    if (typeof date === "string") {
-      if (date.includes("T")) {
-        const [ano, mes, dia] = date.split("T")[0].split("-");
-        return `${dia}/${mes}/${ano}`;
+
+    try {
+      // Se a string for "0001-01-01T00:00:00", retornar "-"
+      if (typeof date === "string" && date.startsWith("0001")) {
+        return "-";
       }
-      if (date.includes("-")) {
-        const [ano, mes, dia] = date.split("-");
-        return `${dia}/${mes}/${ano}`;
-      }
+
+      const dataObj = new Date(date);
+
+      if (isNaN(dataObj.getTime())) return "-";
+
+      // Formatar para o padrão brasileiro
+      return dataObj.toLocaleDateString("pt-BR");
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "-";
     }
-    if (date instanceof Date) {
-      return date.toLocaleDateString("pt-BR");
-    }
-    return "-";
   };
 
   const valorTotalNum = parseFloat(formData.valor_Total) || 0;

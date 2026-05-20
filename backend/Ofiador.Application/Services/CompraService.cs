@@ -19,7 +19,17 @@ namespace Ofiador.Application.Services
             _repository = repository;
         }
         public Compra CriarCompra(Compra compra)
-{
+{           
+
+        if (compra.Data_Compra == DateTime.MinValue)
+        {
+            compra.Data_Compra = DateTime.UtcNow;
+        }
+        else
+        {
+            compra.Data_Compra = DateTime.SpecifyKind(compra.Data_Compra, DateTimeKind.Utc);
+        }
+
             if(!compra.DataPrimeiroVencimento.HasValue)
             {
                 compra.DataPrimeiroVencimento = new DateTime(

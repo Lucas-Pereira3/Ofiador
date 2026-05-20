@@ -483,7 +483,7 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
                       Parcela
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-                      Vencimento
+                      Data Compra
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
                       Valor

@@ -12,8 +12,8 @@ using Ofiador.Infrastructure.Data;
 namespace Ofiador.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260520054921_nullableDataPrimeiroVencimento")]
-    partial class nullableDataPrimeiroVencimento
+    [Migration("20260520193238_AddDataPrimeiroVencimento")]
+    partial class AddDataPrimeiroVencimento
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

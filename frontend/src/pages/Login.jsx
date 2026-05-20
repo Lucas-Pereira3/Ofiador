@@ -359,8 +359,7 @@ const Login = () => {
 
               {!isLogin && !formData.senha && (
                 <p className="text-xs text-gray-500 mt-1">
-                  A senha deve ter: 8+ caracteres, 1 maiúscula, 1 número e 1
-                  símbolo
+                  Dica: Use uma senha forte para proteger sua conta
                 </p>
               )}
             </div>
