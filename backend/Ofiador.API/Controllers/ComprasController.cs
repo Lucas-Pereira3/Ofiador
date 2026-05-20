@@ -32,23 +32,32 @@ namespace Ofiador.API.Controllers
                 var compraCriada = _compraService.CriarCompra(compra);
 
                 var response = new CompraDTOs
-                {
-                    IdCompra = compra.IdCompra,
+{
+    IdCompra = compra.IdCompra,
 
-                    Valor_Total = compra.Valor_Total,
+    Valor_Total = compra.Valor_Total,
 
-                    Parcelas = compra.Parcelas,
+    Data_Compra = compra.Data_Compra,
 
-                    Cliente = compra.Cliente?.Nome ?? "",
+    Parcelas = compra.Parcelas,
 
-                    Empresa = compra.Empresa?.Nome ?? "",
+    Cliente = compra.Cliente?.Nome ?? "",
 
-                    ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
-                    {
-                        NumeroParcela = cp.NumeroParcela,
-                        ValorParcela = cp.ValorParcela,
-                    }).ToList()
-                };
+    Empresa = compra.Empresa?.Nome ?? "",
+
+    ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
+    {
+        NumeroParcela = cp.NumeroParcela,
+
+        ValorParcela = cp.ValorParcela,
+
+        Pago = cp.Pago,
+
+        Status = cp.Status.ToString(),
+
+        Datapagamento = cp.DataPagamento
+    }).ToList()
+};
                 return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
             }
             catch (Exception ex)
@@ -73,6 +82,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 
