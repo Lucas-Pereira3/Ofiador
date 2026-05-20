@@ -5,6 +5,8 @@ public class CompraDTOs
 
     public decimal Valor_Total { get; set; }
 
+    public DateTime Data_Compra { get; set; }
+
     public string Cliente { get; set; } = string.Empty;
 
     public int Parcelas { get; set; }
