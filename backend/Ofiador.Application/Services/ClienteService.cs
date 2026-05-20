@@ -1,15 +1,36 @@
 using System.Text.RegularExpressions;
-using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Repository;
 using Ofiador.Domain.Entities;
 
 namespace Ofiador.Application.Services
 {
     public class ClienteService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ClienteRepository _repository;
 
-        public ClienteService(ApplicationDbContext context){
-            _context = context;
+        public ClienteService(ClienteRepository repository){
+            _repository = repository;
+        }
+        //Telefone Valido
+        public bool TelefoneValido(string telefone)
+        {
+            //Remover oque não for numero
+            telefone = Regex.Replace(telefone, @"[^\d]", "");
+
+            //telefone fixo = 10
+            //celular = 11
+            if(telefone.Length < 10 || telefone.Length > 11)
+            {
+                return false;
+            }
+
+            //impede sequencia repetida
+            if (new string(telefone[0], telefone.Length) == telefone)
+            {
+                return false;
+            }
+
+            return true;
         }
         //Cnjpj Valido
         public bool CnpjValido(string cnpj)
@@ -130,13 +151,13 @@ namespace Ofiador.Application.Services
         //Documento Existe
         public bool DocumentoExiste(string documento)
         {
-            return _context.Clientes.Any(c => c.Cpf_Cnpj == documento);
+            return _repository.DocumentoExiste(documento);
         }
 
         //Email Existe
          public bool EmailExiste(string email)
         {
-            return _context.Clientes.Any(c => c.Email == email);
+            return _repository.EmailExiste(email);
         }
 
         //Criar Cliente
@@ -163,6 +184,11 @@ namespace Ofiador.Application.Services
             if (string.IsNullOrWhiteSpace(cliente.Telefone))
             {
                 return (false, "Telefone é obrigatório");
+            }
+
+            if (!TelefoneValido(cliente.Telefone)) 
+            {
+                return (false, "Telefone inválido");
             }
 
              if (DocumentoExiste(cliente.Cpf_Cnpj))
@@ -194,22 +220,21 @@ namespace Ofiador.Application.Services
             {
                 return(false,"Endereço é obrigatório");
             }
-            var empresaExiste = _context.Empresas.Any(e=> e.IdEmpresa == cliente.IdEmpresa);
+            
 
-            if (!empresaExiste)
+            if (!_repository.EmpresaExiste(cliente.IdEmpresa))
             {
                 return(false,"empresa não encontrada");
             }
 
-            _context.Clientes.Add(cliente);
-            _context.SaveChanges();
+            _repository.Adicionar(cliente);
 
             return(true, "Cliente cadastrado com sucesso");
         }
 
         public (bool sucesso, string menssagem)AtualizarCliente(int id, Cliente clienteAtualizado)
         {
-            var cliente = _context.Clientes.FirstOrDefault(c => c.IdCliente==id);
+            var cliente = _repository.BuscarPorId(id);
 
             if(cliente == null)
             {
@@ -222,7 +247,7 @@ namespace Ofiador.Application.Services
 
             //documento duplicado
 
-            var documentoExiste = _context.Clientes.Any(c=> c.Cpf_Cnpj == clienteAtualizado.Cpf_Cnpj && c.IdCliente != id);
+            var documentoExiste = _repository.DocumentoAtualizadoExiste(clienteAtualizado.Cpf_Cnpj, id);
 
             if (documentoExiste)
             {
@@ -231,7 +256,7 @@ namespace Ofiador.Application.Services
 
             //Email duplicado
 
-            var EmailExiste = _context.Clientes.Any(c => c.Email == clienteAtualizado.Email && c.IdCliente != id);
+            var EmailExiste = _repository.EmailAtualizadoExiste(clienteAtualizado.Email, id);
 
             if (EmailExiste)
             {
@@ -268,23 +293,21 @@ namespace Ofiador.Application.Services
             cliente.Telefone=clienteAtualizado.Telefone;
             cliente.IdEmpresa=clienteAtualizado.IdEmpresa;
 
-            _context.SaveChanges();
+            _repository.Atualizar();
 
             return(true,"Cliente atualizadocom Sucesso");
         }
 
         public(bool sucesso, string mensagem)ExcluirCLiente(int id)
         {
-            var cliente = _context.Clientes.FirstOrDefault(c => c.IdCliente == id);
+            var cliente = _repository.BuscarPorId(id);
 
             if(cliente == null)
             {
                 return (false, "cliente não encontrado");
             }
 
-            _context.Clientes.Remove(cliente);
-
-            _context.SaveChanges();
+            _repository.Remover(cliente);
 
             return (true,"Cliente excluido com sucesso");
         }

@@ -7,7 +7,7 @@ using Ofiador.Application.Services;
 using Ofiador.Application.DTOs;
 namespace Ofiador.API.Controllers
 {
-    [Authorize]
+ 
     [ApiController]
     [Route("api/[controller]")]
     public class ClienteController : ControllerBase
@@ -20,6 +20,7 @@ namespace Ofiador.API.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult CriarCliente([FromBody] Cliente cliente) 
         { 
@@ -93,6 +94,7 @@ namespace Ofiador.API.Controllers
             return Ok(cliente);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public IActionResult AtualizarCliente(int id, [FromBody] Cliente cliente)
         {
@@ -112,6 +114,7 @@ namespace Ofiador.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public IActionResult ExcluirCliente(int id)
         {
