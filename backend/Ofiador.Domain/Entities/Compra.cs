@@ -8,7 +8,9 @@ namespace Ofiador.Domain.Entities
 
         public DateTime Data_Compra {  get; set; }
 
-        public int Parcelas {  get; set; }
+        public DateTime DataPrimeiroVencimento { get; set; }
+
+        public int Parcelas { get; set; }
 
         public int ParcelasPagas { get; set; }
 

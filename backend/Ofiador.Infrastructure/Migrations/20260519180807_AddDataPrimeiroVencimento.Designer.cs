@@ -2,19 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ofiador.Infrastructure.Data;
 
 #nullable disable
-
 namespace Ofiador.Infrastructure.Migrations
 
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260519180807_AddDataPrimeiroVencimento")]
+    partial class AddDataPrimeiroVencimento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,7 +25,7 @@ namespace Ofiador.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Cliente", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Cliente", b =>
                 {
                     b.Property<int>("IdCliente")
                         .ValueGeneratedOnAdd()
@@ -64,13 +66,16 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("Clientes");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Compra", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Compra", b =>
                 {
                     b.Property<int>("IdCompra")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdCompra"));
+
+                    b.Property<DateTime>("DataPrimeiroVencimento")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("Data_Compra")
                         .HasColumnType("timestamp with time zone");
@@ -101,7 +106,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("Compras");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.CompraParcela", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.CompraParcela", b =>
                 {
                     b.Property<int>("idCompraParcela")
                         .ValueGeneratedOnAdd()
@@ -159,7 +164,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("compra_parcela");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Empresa", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Empresa", b =>
                 {
                     b.Property<int>("IdEmpresa")
                         .ValueGeneratedOnAdd()
@@ -192,7 +197,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("Empresas");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Fatura", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Fatura", b =>
                 {
                     b.Property<int>("IdFatura")
                         .ValueGeneratedOnAdd()
@@ -237,7 +242,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("fatura");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Pagamento", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Pagamento", b =>
                 {
                     b.Property<int>("IdPagamento")
                         .ValueGeneratedOnAdd()
@@ -261,7 +266,7 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("Pagamentos");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Usuario", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Usuario", b =>
                 {
                     b.Property<int>("IdUsuario")
                         .ValueGeneratedOnAdd()
@@ -286,9 +291,9 @@ namespace Ofiador.Infrastructure.Migrations
                     b.ToTable("Usuarios");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Cliente", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Cliente", b =>
                 {
-                    b.HasOne("Ofiador.Domain.Models.Empresa", "Empresa")
+                    b.HasOne("Ofiador.Domain.Entities.Empresa", "Empresa")
                         .WithMany()
                         .HasForeignKey("IdEmpresa")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -297,15 +302,15 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Navigation("Empresa");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Compra", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Compra", b =>
                 {
-                    b.HasOne("Ofiador.Domain.Models.Cliente", "Cliente")
+                    b.HasOne("Ofiador.Domain.Entities.Cliente", "Cliente")
                         .WithMany()
                         .HasForeignKey("IdCliente")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Ofiador.Domain.Models.Empresa", "Empresa")
+                    b.HasOne("Ofiador.Domain.Entities.Empresa", "Empresa")
                         .WithMany()
                         .HasForeignKey("IdEmpresa")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -316,15 +321,15 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Navigation("Empresa");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.CompraParcela", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.CompraParcela", b =>
                 {
-                    b.HasOne("Ofiador.Domain.Models.Compra", "Compra")
+                    b.HasOne("Ofiador.Domain.Entities.Compra", "Compra")
                         .WithMany("CompraParcelas")
                         .HasForeignKey("IdCompra")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Ofiador.Domain.Models.Fatura", "Fatura")
+                    b.HasOne("Ofiador.Domain.Entities.Fatura", "Fatura")
                         .WithMany("CompraParcelas")
                         .HasForeignKey("IdFatura")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -335,9 +340,9 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Navigation("Fatura");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Fatura", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Fatura", b =>
                 {
-                    b.HasOne("Ofiador.Domain.Models.Cliente", "Cliente")
+                    b.HasOne("Ofiador.Domain.Entities.Cliente", "Cliente")
                         .WithMany()
                         .HasForeignKey("IdCliente")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -346,9 +351,9 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Navigation("Cliente");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Pagamento", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Pagamento", b =>
                 {
-                    b.HasOne("Ofiador.Domain.Models.Fatura", "Fatura")
+                    b.HasOne("Ofiador.Domain.Entities.Fatura", "Fatura")
                         .WithMany()
                         .HasForeignKey("IdFatura")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -357,12 +362,12 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Navigation("Fatura");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Compra", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Compra", b =>
                 {
                     b.Navigation("CompraParcelas");
                 });
 
-            modelBuilder.Entity("Ofiador.Domain.Models.Fatura", b =>
+            modelBuilder.Entity("Ofiador.Domain.Entities.Fatura", b =>
                 {
                     b.Navigation("CompraParcelas");
                 });
