@@ -34,6 +34,10 @@ builder.Services.AddScoped<FaturaService>();
 //================= Repositorys =================
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<CompraRepository>();
+builder.Services.AddScoped<EmpresaRepository>();
+builder.Services.AddScoped<FaturaRepository>();
+builder.Services.AddScoped<PagamentoRepository>();
 //====================== JWT ========================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

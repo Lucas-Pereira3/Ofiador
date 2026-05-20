@@ -4,6 +4,7 @@ using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ofiador.API.Controllers
 {
@@ -19,7 +20,7 @@ namespace Ofiador.API.Controllers
             _context = context;
             _faturaService = faturaService;
         }
-
+        [Authorize]
         [HttpPost]
         public IActionResult CriarFatura([FromBody] FaturaDTOs dto)
         {
@@ -52,6 +53,80 @@ namespace Ofiador.API.Controllers
                 .ToList();
 
             return Ok(faturas);
+        }
+
+        [HttpGet("{clienteId}")]
+        public IActionResult BuscarFaturasClientes (int clienteId)
+        {
+            //validar Cliente
+            var cliente = _context.Clientes.FirstOrDefault(c => c.IdCliente == clienteId);
+
+            if(cliente == null)
+            {
+                return NotFound(new
+                {
+                    erro = "cliente não encontrado"
+                });
+            }
+
+            //Buscar Fatura
+            var faturas = _context.Faturas
+                .Include (f=> f.Cliente)
+                .Where(f=>f.IdCliente == clienteId)
+                .Select(f=> new FaturaDTOs
+                {
+                    IdFatura=f.IdFatura,
+
+                    Total=f.Total,
+                    
+                    Venciemnto=f.Vencimento,
+
+                    parcelas=f.Parcelas,
+
+                    Status=f.Status,
+
+                    MesReferencia=f.MesReferencia,
+
+                    DataGeracao=f.DataGeracao,
+
+                    IdCliente=f.IdCliente,
+
+                    ClienteNome=f.Cliente.Nome
+                }).ToList();
+
+            return Ok(faturas);
+        }
+
+        [Authorize]
+        [HttpPatch("{id}/pagar")]
+        public IActionResult PagarFatura(int id, [FromBody] PagamentoFaturaDTOs dto) 
+        {
+            try
+            {
+                var pagamento = _faturaService.PagarFatura(id, dto.ValorPago);
+
+                return Ok(new
+                {
+                    mensagem = "Fatura paga com sucesso",
+                    pagamento
+                });
+            }
+            catch (Exception ex) 
+            { 
+                if(ex.Message.Contains("não encontrado"))
+                {
+                    return NotFound(new
+                    {
+                        erro = ex.Message
+                   
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    erro =ex.Message
+                });
+            }
         }
     }
 }

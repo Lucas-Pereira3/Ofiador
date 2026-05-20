@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Repository;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -11,44 +12,48 @@ namespace Ofiador.Application.Services
     
     public class CompraService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly CompraRepository _repository;
 
-        public CompraService(ApplicationDbContext context)
+        public CompraService(CompraRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
         public Compra CriarCompra(Compra compra)
 {
-    var cliente = _context.Clientes
-        .FirstOrDefault(c => c.IdCliente == compra.IdCliente);
+            if(!compra.DataPrimeiroVencimento.HasValue)
+            {
+                compra.DataPrimeiroVencimento = new DateTime(
+                    DateTime.UtcNow.Year,
+                    DateTime.UtcNow.Month,
+                    1,
+                    0,
+                    0,
+                    0,
+                    DateTimeKind.Utc
+                    ).AddMonths(1);
+            }
+            var cliente = _repository.BuscarCliente(compra.IdCliente);
 
     if (cliente == null)
     {
         throw new Exception("Cliente não encontrado");
     }
 
-    var empresa = _context.Empresas
-        .FirstOrDefault(e => e.IdEmpresa == compra.IdEmpresa);
+    var empresa = _repository.BuscarEmpresa(compra.IdEmpresa);
 
     if (empresa == null)
     {
         throw new Exception("Empresa não encontrada");
     }
 
-    var dividaAtual = _context.Faturas
-        .Where(f =>
-            f.IdCliente == compra.IdCliente &&
-            f.Status != "PAGO")
-        .Sum(f => (decimal?)f.Total) ?? 0;
+            var dividaAtual = _repository.BuscarDividaAtual(compra.IdCliente);
 
     if (dividaAtual + compra.Valor_Total > cliente.Limite)
     {
         throw new Exception("Limite do cliente excedido");
     }
 
-    _context.Compras.Add(compra);
-
-    _context.SaveChanges();
+    _repository.AdicionarCompra(compra);
 
     decimal valorParcela = Math.Round(
         compra.Valor_Total / compra.Parcelas,
@@ -59,7 +64,7 @@ namespace Ofiador.Application.Services
     {
         // DATA REAL DO VENCIMENTO
         var dataVencimento = DateTime.SpecifyKind(
-            compra.DataPrimeiroVencimento.AddMonths(i),
+            compra.DataPrimeiroVencimento.Value.AddMonths(i),
             DateTimeKind.Utc
         );
 
@@ -73,12 +78,7 @@ namespace Ofiador.Application.Services
             DateTimeKind.Utc
         );
 
-        var fatura = _context.Faturas
-            .FirstOrDefault(f =>
-                f.IdCliente == compra.IdCliente &&
-                f.MesReferencia.Month == mesReferencia.Month &&
-                f.MesReferencia.Year == mesReferencia.Year
-            );
+                var fatura = _repository.BuscarFatura(compra.IdCliente, mesReferencia);
 
         if (fatura == null)
         {
@@ -98,9 +98,7 @@ namespace Ofiador.Application.Services
                 DataGeracao = compra.Data_Compra
             };
 
-            _context.Faturas.Add(fatura);
-
-            _context.SaveChanges();
+           _repository.AdicionarFatura(fatura);
         }
 
         decimal valorAtual = valorParcela;
@@ -133,24 +131,14 @@ namespace Ofiador.Application.Services
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.CompraParcelas.Add(compraParcela);
+         _repository.AdicionarParcela(compraParcela);
 
         compra.CompraParcelas.Add(compraParcela);
     }
 
-    _context.SaveChanges();
+            _repository.Salvar();
 
-    _context.Entry(compra)
-        .Reference(c => c.Cliente)
-        .Load();
-
-    _context.Entry(compra)
-        .Reference(c => c.Empresa)
-        .Load();
-
-    _context.Entry(compra)
-        .Collection(c => c.CompraParcelas)
-        .Load();
+            _repository.CarregarRelacionamento(compra);
 
     return compra;
 }

@@ -9,7 +9,6 @@ using Ofiador.Infrastructure.Data;
 #nullable disable
 
 namespace Ofiador.Infrastructure.Migrations
-
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -72,7 +71,7 @@ namespace Ofiador.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdCompra"));
 
-                    b.Property<DateTime>("DataPrimeiroVencimento")
+                    b.Property<DateTime?>("DataPrimeiroVencimento")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("Data_Compra")

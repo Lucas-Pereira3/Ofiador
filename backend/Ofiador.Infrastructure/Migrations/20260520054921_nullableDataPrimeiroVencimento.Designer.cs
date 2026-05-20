@@ -8,12 +8,12 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ofiador.Infrastructure.Data;
 
 #nullable disable
-namespace Ofiador.Infrastructure.Migrations
 
+namespace Ofiador.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260519180807_AddDataPrimeiroVencimento")]
-    partial class AddDataPrimeiroVencimento
+    [Migration("20260520054921_nullableDataPrimeiroVencimento")]
+    partial class nullableDataPrimeiroVencimento
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -74,7 +74,7 @@ namespace Ofiador.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdCompra"));
 
-                    b.Property<DateTime>("DataPrimeiroVencimento")
+                    b.Property<DateTime?>("DataPrimeiroVencimento")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("Data_Compra")

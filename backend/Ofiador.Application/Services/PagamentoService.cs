@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Ofiador.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
@@ -9,18 +7,16 @@ namespace Ofiador.Application.Services
 {
     public class PagamentoService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly PagamentoRepository _repository;
 
-        public PagamentoService(ApplicationDbContext context)
+        public PagamentoService(PagamentoRepository repository)
         {
-            _context = context;
+            _repository = repository;  
         }
 
         public Pagamento PagarParcela(int idParcela, decimal valorPago)
         {
-            var parcela = _context.CompraParcelas
-                .Include(cp => cp.Fatura)
-                .FirstOrDefault(cp => cp.idCompraParcela == idParcela);
+            var parcela = _repository.BuscarParcela(idParcela);
 
             if (parcela == null)
             {
@@ -39,7 +35,7 @@ namespace Ofiador.Application.Services
 
             parcela.DataPagamento = DateTime.UtcNow;
 
-            _context.SaveChanges();
+            _repository.Salvar();
 
             //Cria Pagamento
             var pagamento = new Pagamento
@@ -51,17 +47,17 @@ namespace Ofiador.Application.Services
                 IdFatura = parcela.IdFatura
             };
 
-            _context.Pagamentos.Add(pagamento);
+           _repository.AdicionarPagamento(pagamento);
 
             //verificar se todas as parcelas da fatura foram pagas
-            var parcelasPendentes = _context.CompraParcelas.Any(cp => cp.IdFatura == parcela.IdFatura && !cp.Pago);
+            var parcelasPendentes = _repository.ExisteParcelasPendentes(parcela.IdFatura);
 
             if (!parcelasPendentes)
             {
                 parcela.Fatura.Status = "PAGO";
             }
 
-            _context.SaveChanges();
+            _repository.Salvar();
 
             return pagamento;
         }
