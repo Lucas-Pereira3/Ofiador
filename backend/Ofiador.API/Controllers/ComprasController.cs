@@ -29,6 +29,15 @@ namespace Ofiador.API.Controllers
         {
             try
             {
+            if (compra.Data_Compra == DateTime.MinValue)
+            {
+                compra.Data_Compra = DateTime.UtcNow;
+            }
+            else
+            {
+    
+                compra.Data_Compra = DateTime.SpecifyKind(compra.Data_Compra, DateTimeKind.Utc);
+            }
                 var compraCriada = _compraService.CriarCompra(compra);
 
                 var response = new CompraDTOs
@@ -131,6 +140,8 @@ namespace Ofiador.API.Controllers
 
                 Valor_Total = compra.Valor_Total,
 
+                Data_Compra = compra.Data_Compra,
+
                 Parcelas = compra.Parcelas,
 
                 Cliente = compra.Cliente?.Nome ?? "",
@@ -181,6 +192,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 

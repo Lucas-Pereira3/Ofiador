@@ -15,8 +15,7 @@ namespace Ofiador.Infrastructure.Migrations
                 name: "DataPrimeiroVencimento",
                 table: "Compras",
                 type: "timestamp with time zone",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
+                nullable: true);
         }
 
         /// <inheritdoc />
