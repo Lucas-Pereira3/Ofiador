@@ -16,6 +16,7 @@ import Clientes from "./pages/Clientes";
 import Empresas from "./pages/Empresas";
 import Compras from "./pages/Compras";
 import Faturas from "./pages/Faturas";
+import Pagamentos from "./pages/Pagamentos";
 import Relatorios from "./pages/Relatorios";
 
 const theme = createTheme({
@@ -65,14 +66,7 @@ function AppRoutes() {
         <Route path="/empresas" element={<Empresas />} />
         <Route path="/compras" element={<Compras />} />
         <Route path="/faturas" element={<Faturas />} />
-        <Route
-          path="/pagamentos"
-          element={
-            <div className="p-6 text-center text-gray-500">
-              Página de Pagamentos em desenvolvimento
-            </div>
-          }
-        />
+        <Route path="/pagamentos" element={<Pagamentos />} />
         <Route path="/relatorios" element={<Relatorios />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>

@@ -72,47 +72,78 @@ namespace Ofiador.API.Controllers
                 });
             }
 
+            var cliente = fatura.Cliente;
+
+// Total utilizado
+var limiteUtilizado = _context.Compras
+    .Where(c => c.IdCliente == cliente.IdCliente)
+    .Sum(c => (decimal?)c.Valor_Total) ?? 0;
+
+// Total pago
+var totalPago = _context.Pagamentos
+    .Where(p => p.Fatura.IdCliente == cliente.IdCliente)
+    .Sum(p => (decimal?)p.ValorPago) ?? 0;
+
+// Em aberto
+var limiteEmAberto = limiteUtilizado - totalPago;
+
+// Compras em aberto
+var comprasEmAberto = fatura.CompraParcelas
+    .Select(cp => cp.Compra.IdCompra)
+    .Distinct()
+    .Count();
+
             var resultado = new
             {
                 idFatura = fatura.IdFatura,
 
-                total = fatura.Total,
+    total = fatura.Total,
 
-                status = fatura.Status,
+    status = fatura.Status,
 
-                mesReferencia = fatura.MesReferencia,
+    mesReferencia = fatura.MesReferencia,
 
-                vencimento = fatura.Vencimento,
+    vencimento = fatura.Vencimento,
 
-                dataGeracao = fatura.DataGeracao,
+    dataGeracao = fatura.DataGeracao,
 
-                cliente = new
-                {
-                    nome = fatura.Cliente.Nome,
+    cliente = new
+    {
+        idCliente = cliente.IdCliente,
 
-                    Cpf_Cnpj = fatura.Cliente.Cpf_Cnpj,
-                },
+        nome = cliente.Nome,
 
-                compraParcelas = fatura.CompraParcelas
-                .Select(cp => new
-                {
-                    cp.idCompraParcela,
+        cpf_Cnpj = cliente.Cpf_Cnpj,
 
-                    cp.NumeroParcela,
+        limiteTotal = cliente.Limite,
 
-                    cp.ValorParcela,
+        limiteUtilizado = limiteEmAberto,
 
-                    Status = cp.Status.ToString(),
+        limiteDisponivel = cliente.Limite - limiteEmAberto,
 
-                    Compra = new
-                    {
-                        cp.Compra.IdCompra,
+        comprasEmAberto = comprasEmAberto
+    },
 
-                        cp.Compra.Parcelas,
+    compraParcelas = fatura.CompraParcelas
+    .Select(cp => new
+    {
+        cp.idCompraParcela,
 
-                        cp.Compra.Data_Compra,
-                    }
-                })
+        cp.NumeroParcela,
+
+        cp.ValorParcela,
+
+        status = cp.Status.ToString(),
+
+        compra = new
+        {
+            cp.Compra.IdCompra,
+
+            cp.Compra.Parcelas,
+
+            cp.Compra.Data_Compra,
+        }
+    })
             };
 
             return Ok(resultado);

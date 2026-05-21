@@ -8,8 +8,8 @@ import {
   DocumentTextIcon,
   XMarkIcon,
   CreditCardIcon,
-  PlusIcon,
 } from "@heroicons/react/24/outline";
+import Select from "react-select";
 
 // Componente de Badge de Status
 const StatusBadge = ({ status }) => {
@@ -147,204 +147,6 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
-// Modal de Gerar Fatura (ajustado para usar o endpoint existente POST /faturas)
-const GerarFaturaModal = ({ isOpen, onClose, onFaturaGerada, clientes }) => {
-  const [clienteId, setClienteId] = useState("");
-  const [mes, setMes] = useState(new Date().getMonth() + 1);
-  const [ano, setAno] = useState(new Date().getFullYear());
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const meses = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ];
-
-  const anos = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - 2 + i
-  );
-
-  const calcularValorTotal = (compras) => {
-    if (!compras || compras.length === 0) return 0;
-    return compras.reduce((total, compra) => total + compra.valor_Total, 0);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const newErrors = {};
-    if (!clienteId) newErrors.clienteId = "Selecione um cliente";
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-
-    setLoading(true);
-    try {
-      // Primeiro, buscar as compras do cliente no período
-      const comprasResponse = await api.get("/compras", {
-        params: {
-          clienteId: parseInt(clienteId),
-        },
-      });
-
-      const comprasDoPeriodo = comprasResponse.data.filter((compra) => {
-        const dataCompra = new Date(compra.data_Compra);
-        return (
-          dataCompra.getMonth() + 1 === mes && dataCompra.getFullYear() === ano
-        );
-      });
-
-      if (comprasDoPeriodo.length === 0) {
-        toast.error("Não há compras para este cliente no período selecionado");
-        setLoading(false);
-        return;
-      }
-
-      const mesReferencia = new Date(ano, mes - 1, 1);
-      const valorTotal = calcularValorTotal(comprasDoPeriodo);
-      const maiorParcelas = Math.max(
-        ...comprasDoPeriodo.map((c) => c.parcelas),
-        1
-      );
-
-      // Criar a fatura
-      const faturaData = {
-        total: valorTotal,
-        vencimento: new Date(ano, mes, 0).toISOString(), // Último dia do mês
-        status: "Pendente",
-        parcelas: maiorParcelas,
-        mesReferencia: mesReferencia.toISOString(),
-        dataGeracao: new Date().toISOString(),
-        idCliente: parseInt(clienteId),
-      };
-
-      const response = await api.post("/faturas", faturaData);
-
-      toast.success("Fatura gerada com sucesso!");
-      onFaturaGerada(response.data);
-      onClose();
-      setClienteId("");
-    } catch (error) {
-      console.error("Erro ao gerar fatura:", error);
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.title ||
-        "Erro ao gerar fatura";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold" style={{ color: "#1A2B4C" }}>
-            Gerar Fatura Mensal
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cliente *
-            </label>
-            <select
-              value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.clienteId ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Selecione um cliente</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.idCliente} value={cliente.idCliente}>
-                  {cliente.nome} - {cliente.cpf_Cnpj}
-                </option>
-              ))}
-            </select>
-            {errors.clienteId && (
-              <p className="mt-1 text-xs text-red-500">{errors.clienteId}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mês *
-              </label>
-              <select
-                value={mes}
-                onChange={(e) => setMes(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                {meses.map((nome, index) => (
-                  <option key={index + 1} value={index + 1}>
-                    {nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ano *
-              </label>
-              <select
-                value={ano}
-                onChange={(e) => setAno(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                {anos.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-white bg-[#1A2B4C] rounded-md hover:bg-[#152340] disabled:opacity-50"
-            >
-              {loading ? "Gerando..." : "Gerar Fatura"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 // Modal de Detalhes da Fatura
 const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
   const [pagando, setPagando] = useState(false);
@@ -376,14 +178,28 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
 
   const handlePagarFatura = async () => {
     setPagando(true);
+
     try {
-      await api.put(`/faturas/${faturaAtualizada.idFatura}/status`, "Paga");
+      await api.patch(`/faturas/${faturaAtualizada.idFatura}/pagar`, {
+        valorPago: faturaAtualizada.total,
+      });
+
       toast.success("Fatura paga com sucesso!");
-      setFaturaAtualizada({ ...faturaAtualizada, status: "Paga" });
-      onStatusUpdate(faturaAtualizada.idFatura, "Paga");
+
+      // Atualiza status local
+      const novaFatura = {
+        ...faturaAtualizada,
+        status: "PAGO",
+      };
+
+      setFaturaAtualizada(novaFatura);
+
+      // Atualiza lista principal
+      onStatusUpdate(faturaAtualizada.idFatura, "PAGO");
     } catch (error) {
       console.error("Erro ao pagar fatura:", error);
-      toast.error("Erro ao pagar fatura");
+
+      toast.error(error.response?.data?.erro || "Erro ao pagar fatura");
     } finally {
       setPagando(false);
     }
@@ -494,104 +310,73 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                    {faturaAtualizada?.compraParcelas?.map((parcela) => (
-                        <tr
-                            key={parcela.idCompraParcela}
-                            className="hover:bg-gray-50"
-                        >
-                            <td className="px-4 py-2 text-sm">
-                                {parcela.numeroParcela}/
-                                {parcela.compra?.parcelas}
-                            </td>
-
-                            <td className="px-4 py-2 text-sm">
-                                {formatDate(
-                                    parcela.compra?.data_Compra
-                                )}
-                            </td>
-
-                            <td className="px-4 py-2 text-sm font-medium">
-                                {formatCurrency(
-                                    parcela.valorParcela
-                                )}
-                            </td>
-
-                            <td className="px-4 py-2">
-                                <StatusBadge
-                                    status={parcela.status}
-                                />
-                            </td>
-                        </tr>
-                    ))}
+                  {faturaAtualizada?.compraParcelas?.map((parcela) => (
+                    <tr
+                      key={parcela.idCompraParcela}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-2 text-sm">
+                        {parcela.numeroParcela}/{parcela.compra?.parcelas}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {formatDate(parcela.compra?.data_Compra)}
+                      </td>
+                      <td className="px-4 py-2 text-sm font-medium">
+                        {formatCurrency(parcela.valorParcela)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <StatusBadge status={parcela.status} />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Compras Vinculadas */}
+          {/* Situação do Cliente */}
           <div>
             <h3
               className="text-lg font-semibold mb-3"
               style={{ color: "#1A2B4C" }}
             >
-              Detalhes das Compras Vinculadas
+              Situação do Cliente
             </h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 border rounded-lg">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-                      Data
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-                      Valor
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-                      Parcelas
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {faturaAtualizada?.compras?.map((compra) => (
-                    <tr key={compra.idCompra} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm">
-                        {formatDate(compra.data_Compra)}
-                      </td>
-                      <td className="px-4 py-2 text-sm font-medium">
-                        {formatCurrency(compra.valor_Total)}
-                      </td>
-                      <td className="px-4 py-2 text-sm">{compra.parcelas}x</td>
-                    </tr>
-                  ))}
-                  {(!faturaAtualizada?.compras ||
-                    faturaAtualizada?.compras.length === 0) && (
-                    <tr>
-                      <td
-                        colSpan="3"
-                        className="px-4 py-8 text-center text-gray-500"
-                      >
-                        Nenhuma compra vinculada a esta fatura
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot className="bg-gray-50">
-                  <tr>
-                    <td
-                      colSpan="2"
-                      className="px-4 py-2 text-right text-sm font-medium"
-                    >
-                      Total:
-                    </td>
-                    <td
-                      className="px-4 py-2 text-sm font-bold"
-                      style={{ color: "#1A2B4C" }}
-                    >
-                      {formatCurrency(faturaAtualizada?.total)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-gray-50 border rounded-lg p-3">
+                <p className="text-xs text-gray-500">Limite Total</p>
+                <p
+                  className="text-lg font-bold mt-1"
+                  style={{ color: "#1A2B4C" }}
+                >
+                  {formatCurrency(faturaAtualizada?.cliente?.limiteTotal)}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border rounded-lg p-3">
+                <p className="text-xs text-gray-500">Utilizado</p>
+                <p className="text-lg font-bold mt-1 text-red-600">
+                  {formatCurrency(faturaAtualizada?.cliente?.limiteUtilizado)}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border rounded-lg p-3">
+                <p className="text-xs text-gray-500">Disponível</p>
+                <p className="text-lg font-bold mt-1 text-green-600">
+                  {formatCurrency(faturaAtualizada?.cliente?.limiteDisponivel)}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border rounded-lg p-3">
+                <p className="text-xs text-gray-500">Em Aberto</p>
+                <p
+                  className="text-lg font-bold mt-1"
+                  style={{ color: "#1A2B4C" }}
+                >
+                  {faturaAtualizada?.cliente?.comprasEmAberto || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -603,7 +388,7 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
           >
             Fechar
           </button>
-          {faturaAtualizada?.status !== "Paga" && (
+          {faturaAtualizada?.status !== "Pago" && (
             <button
               onClick={handlePagarFatura}
               disabled={pagando}
@@ -628,7 +413,6 @@ const Faturas = () => {
   const [itemsPerPage] = useState(10);
   const [faturaSelecionada, setFaturaSelecionada] = useState(null);
   const [showDetalhesModal, setShowDetalhesModal] = useState(false);
-  const [showGerarModal, setShowGerarModal] = useState(false);
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState("");
@@ -666,18 +450,14 @@ const Faturas = () => {
   };
 
   const handleVerDetalhes = async (fatura) => {
-      try {
-          const response = await api.get(`/faturas/${fatura.idFatura}`);
-
-
-          setFaturaSelecionada(response.data);
-
-          setShowDetalhesModal(true);
-      } catch (error) {
-          console.error("Erro ao buscar detalhes da fatura", error);
-
-          toast.error("Erro ao carregar detalhes da fatura");
-      }
+    try {
+      const response = await api.get(`/faturas/${fatura.idFatura}`);
+      setFaturaSelecionada(response.data);
+      setShowDetalhesModal(true);
+    } catch (error) {
+      console.error("Erro ao buscar detalhes da fatura", error);
+      toast.error("Erro ao carregar detalhes da fatura");
+    }
   };
 
   const handleStatusUpdate = (id, novoStatus) => {
@@ -687,10 +467,6 @@ const Faturas = () => {
     if (faturaSelecionada?.idFatura === id) {
       setFaturaSelecionada({ ...faturaSelecionada, status: novoStatus });
     }
-  };
-
-  const handleFaturaGerada = (novaFatura) => {
-    loadFaturas();
   };
 
   // Filtrar faturas
@@ -749,22 +525,13 @@ const Faturas = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#1A2B4C" }}>
-            Faturas do Cliente
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Acompanhe o vencimento das faturas
-          </p>
-        </div>
-        <button
-          onClick={() => setShowGerarModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-[#1A2B4C] text-white rounded-md hover:bg-[#152340] transition-colors"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Gerar Fatura Mensal
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: "#1A2B4C" }}>
+          Faturas do Cliente
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Acompanhe o vencimento das faturas
+        </p>
       </div>
 
       {/* Filtros */}
@@ -774,18 +541,32 @@ const Faturas = () => {
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Cliente
             </label>
-            <select
-              value={filtroCliente}
-              onChange={(e) => setFiltroCliente(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1A2B4C]"
-            >
-              <option value="">Todos os clientes</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.idCliente} value={cliente.idCliente}>
-                  {cliente.nome}
-                </option>
-              ))}
-            </select>
+            <Select
+              options={clientes.map((cliente) => ({
+                value: cliente.idCliente,
+                label: cliente.nome,
+              }))}
+              value={
+                clientes
+                  .filter(
+                    (cliente) => cliente.idCliente === parseInt(filtroCliente)
+                  )
+                  .map((cliente) => ({
+                    value: cliente.idCliente,
+                    label: cliente.nome,
+                  }))[0] || null
+              }
+              onChange={(selectedOption) =>
+                setFiltroCliente(
+                  selectedOption ? selectedOption.value.toString() : ""
+                )
+              }
+              placeholder="Pesquisar cliente..."
+              noOptionsMessage={() => "Nenhum cliente encontrado"}
+              loadingMessage={() => "Carregando..."}
+              isClearable
+              className="text-sm"
+            />
           </div>
 
           <div>
@@ -878,7 +659,7 @@ const Faturas = () => {
                         <>
                           <p className="text-lg">Nenhuma fatura cadastrada</p>
                           <p className="text-sm mt-1">
-                            Clique em "Gerar Fatura Mensal" para começar
+                            As faturas são geradas automaticamente
                           </p>
                         </>
                       )}
@@ -944,14 +725,7 @@ const Faturas = () => {
         )}
       </div>
 
-      {/* Modais */}
-      <GerarFaturaModal
-        isOpen={showGerarModal}
-        onClose={() => setShowGerarModal(false)}
-        onFaturaGerada={handleFaturaGerada}
-        clientes={clientes}
-      />
-
+      {/* Modal de Detalhes */}
       <DetalhesFaturaModal
         fatura={faturaSelecionada}
         isOpen={showDetalhesModal}
