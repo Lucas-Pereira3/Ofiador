@@ -22,7 +22,7 @@ namespace Ofiador.API.Controllers
         }
         [Authorize]
         [HttpPost]
-        public IActionResult CriarFatura([FromBody] FaturaDTOs dto)
+        public IActionResult CriarFatura([FromBody] FaturaCreateDTOs dto)
         {
 
             try
@@ -55,7 +55,70 @@ namespace Ofiador.API.Controllers
             return Ok(faturas);
         }
 
-        [HttpGet("{clienteId}")]
+        [HttpGet("{id}")]
+        public IActionResult BuscarFatura(int id)
+        {
+            var fatura = _context.Faturas
+                .Include(f=> f.Cliente)
+                .Include(f => f.CompraParcelas)
+                .ThenInclude(cp => cp.Compra)
+                .FirstOrDefault(f=> f.IdFatura == id);
+
+            if(fatura == null)
+            {
+                return NotFound(new
+                {
+                   erro = "Fatura não encontrada"
+                });
+            }
+
+            var resultado = new
+            {
+                idFatura = fatura.IdFatura,
+
+                total = fatura.Total,
+
+                status = fatura.Status,
+
+                mesReferencia = fatura.MesReferencia,
+
+                vencimento = fatura.Vencimento,
+
+                dataGeracao = fatura.DataGeracao,
+
+                cliente = new
+                {
+                    nome = fatura.Cliente.Nome,
+
+                    Cpf_Cnpj = fatura.Cliente.Cpf_Cnpj,
+                },
+
+                compraParcelas = fatura.CompraParcelas
+                .Select(cp => new
+                {
+                    cp.idCompraParcela,
+
+                    cp.NumeroParcela,
+
+                    cp.ValorParcela,
+
+                    Status = cp.Status.ToString(),
+
+                    Compra = new
+                    {
+                        cp.Compra.IdCompra,
+
+                        cp.Compra.Parcelas,
+
+                        cp.Compra.Data_Compra,
+                    }
+                })
+            };
+
+            return Ok(resultado);
+        }
+
+        [HttpGet("cliente/{clienteId}")]
         public IActionResult BuscarFaturasClientes (int clienteId)
         {
             //validar Cliente

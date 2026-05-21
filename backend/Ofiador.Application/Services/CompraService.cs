@@ -109,6 +109,8 @@ namespace Ofiador.Application.Services
             };
 
            _repository.AdicionarFatura(fatura);
+
+           _repository.Salvar();
         }
 
         decimal valorAtual = valorParcela;

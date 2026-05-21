@@ -5,6 +5,7 @@ using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Ofiador.API.Controllers
 {
@@ -69,6 +70,29 @@ namespace Ofiador.API.Controllers
                 return NotFound(new { erro = "Empresa não encontrada" });
             }
 
+            if (!_empresaService.CnpjValido(empresaAtualizada.Cnpj))
+            {
+                return BadRequest(new
+                {
+                    erro = "CNPJ inválido"
+                });
+            }
+
+            if (!_empresaService.EmailValido(empresaAtualizada.Email))
+            {
+                return BadRequest(new
+                {
+                    erro = "Email iválido"
+                });
+            }
+
+            if (!_empresaService.TelefoneValido(empresaAtualizada.Telefone))
+            {
+                return BadRequest(new
+                {
+                    erro = "Telefone inválido"
+                });
+            }
             // Verificar se o CNPJ já existe em outra empresa
             var cnpjExiste = _context.Empresas.Any(e => e.Cnpj == empresaAtualizada.Cnpj && e.IdEmpresa != id);
             if (cnpjExiste)
