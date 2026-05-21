@@ -494,29 +494,35 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {Array.from({ length: faturaAtualizada?.parcelas || 1 }).map(
-                    (_, index) => {
-                      const valorParcela =
-                        (faturaAtualizada?.total || 0) /
-                        (faturaAtualizada?.parcelas || 1);
-                      return (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm">
-                            {index + 1}/{faturaAtualizada?.parcelas}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            {formatDate(faturaAtualizada?.vencimento)}
-                          </td>
-                          <td className="px-4 py-2 text-sm font-medium">
-                            {formatCurrency(valorParcela)}
-                          </td>
-                          <td className="px-4 py-2">
-                            <StatusBadge status="Pendente" />
-                          </td>
+                    {faturaAtualizada?.compraParcelas?.map((parcela) => (
+                        <tr
+                            key={parcela.idCompraParcela}
+                            className="hover:bg-gray-50"
+                        >
+                            <td className="px-4 py-2 text-sm">
+                                {parcela.numeroParcela}/
+                                {parcela.compra?.parcelas}
+                            </td>
+
+                            <td className="px-4 py-2 text-sm">
+                                {formatDate(
+                                    parcela.compra?.data_Compra
+                                )}
+                            </td>
+
+                            <td className="px-4 py-2 text-sm font-medium">
+                                {formatCurrency(
+                                    parcela.valorParcela
+                                )}
+                            </td>
+
+                            <td className="px-4 py-2">
+                                <StatusBadge
+                                    status={parcela.status}
+                                />
+                            </td>
                         </tr>
-                      );
-                    }
-                  )}
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -659,9 +665,19 @@ const Faturas = () => {
     }
   };
 
-  const handleVerDetalhes = (fatura) => {
-    setFaturaSelecionada(fatura);
-    setShowDetalhesModal(true);
+  const handleVerDetalhes = async (fatura) => {
+      try {
+          const response = await api.get(`/faturas/${fatura.idFatura}`);
+
+
+          setFaturaSelecionada(response.data);
+
+          setShowDetalhesModal(true);
+      } catch (error) {
+          console.error("Erro ao buscar detalhes da fatura", error);
+
+          toast.error("Erro ao carregar detalhes da fatura");
+      }
   };
 
   const handleStatusUpdate = (id, novoStatus) => {

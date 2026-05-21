@@ -25,10 +25,22 @@ namespace Ofiador.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult CriarCompra([FromBody] Compra compra)
+        public IActionResult CriarCompra([FromBody] CompraCreateDTOs dtos)
         {
             try
             {
+                var compra = new Compra
+                {
+                    Valor_Total = dtos.Valor_Total,
+
+                    Parcelas = dtos.Parcelas,
+
+                    IdCliente = dtos.IdCliente,
+
+                    IdEmpresa = dtos.IdEmpresa,
+
+                    DataPrimeiroVencimento = dtos.DataPrimeiroVencimento,
+                };
             if (compra.Data_Compra == DateTime.MinValue)
             {
                 compra.Data_Compra = DateTime.UtcNow;
@@ -41,32 +53,32 @@ namespace Ofiador.API.Controllers
                 var compraCriada = _compraService.CriarCompra(compra);
 
                 var response = new CompraDTOs
-{
-    IdCompra = compra.IdCompra,
+            {
+                IdCompra = compra.IdCompra,
 
-    Valor_Total = compra.Valor_Total,
+                Valor_Total = compra.Valor_Total,
 
-    Data_Compra = compra.Data_Compra,
+                Data_Compra = compra.Data_Compra,
 
-    Parcelas = compra.Parcelas,
+                Parcelas = compra.Parcelas,
 
-    Cliente = compra.Cliente?.Nome ?? "",
+                Cliente = compra.Cliente?.Nome ?? "",
 
-    Empresa = compra.Empresa?.Nome ?? "",
+                Empresa = compra.Empresa?.Nome ?? "",
 
-    ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
-    {
-        NumeroParcela = cp.NumeroParcela,
+                ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
+                {
+                    NumeroParcela = cp.NumeroParcela,
 
-        ValorParcela = cp.ValorParcela,
+                    ValorParcela = cp.ValorParcela,
 
-        Pago = cp.Pago,
+                    Pago = cp.Pago,
 
-        Status = cp.Status.ToString(),
+                    Status = cp.Status.ToString(),
 
-        Datapagamento = cp.DataPagamento
-    }).ToList()
-};
+                    Datapagamento = cp.DataPagamento
+                }).ToList()
+            };
                 return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
             }
             catch (Exception ex)

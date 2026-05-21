@@ -22,8 +22,24 @@ namespace Ofiador.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public IActionResult CriarCliente([FromBody] Cliente cliente) 
-        { 
+        public IActionResult CriarCliente([FromBody] ClienteCreateDTOs dtos) 
+        {
+            var cliente = new Cliente
+            {
+                Nome = dtos.Nome,
+
+                Cpf_Cnpj = dtos.Cpf_Cnpj,
+
+                Telefone = dtos.Telefone,
+
+                Email = dtos.Email,
+
+                Endereco = dtos.Endereco,
+
+                Limite = dtos.Limite,
+
+                IdEmpresa = dtos.IdEmpresa,
+            };
             var resultado= _clienteService.CriarCliente(cliente);
 
             if (!resultado.sucesso)
@@ -96,8 +112,24 @@ namespace Ofiador.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public IActionResult AtualizarCliente(int id, [FromBody] Cliente cliente)
+        public IActionResult AtualizarCliente(int id, [FromBody] ClienteCreateDTOs dtos)
         {
+            var cliente = new Cliente
+            {
+                Nome = dtos.Nome,
+
+                Cpf_Cnpj = dtos.Cpf_Cnpj,
+
+                Telefone = dtos.Telefone,
+
+                Email = dtos.Email,
+
+                Endereco = dtos.Endereco,
+
+                Limite = dtos.Limite,
+
+                IdEmpresa = dtos.IdEmpresa,
+            };
             var resultado = _clienteService.AtualizarCliente(id, cliente);
 
             if (!resultado.sucesso)
