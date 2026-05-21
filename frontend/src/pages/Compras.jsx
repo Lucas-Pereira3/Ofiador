@@ -9,6 +9,7 @@ import {
   ExclamationTriangleIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import Select from "react-select";
 
 // Modal de cadastro rápido de cliente
 const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
@@ -500,10 +501,10 @@ const Compras = () => {
   }, [formData.idCliente, clientes]);
 
   useEffect(() => {
-    if (clienteSelecionado && formData.valor_Total) {
+    if (clienteSelecionado) {
       checkLimiteCredito(clienteSelecionado);
     }
-  }, [formData.valor_Total]);
+  }, [formData.valor_Total, compras, clienteSelecionado]);
 
   const loadEmpresas = async () => {
     try {
@@ -537,10 +538,18 @@ const Compras = () => {
   };
 
   const checkLimiteCredito = (cliente) => {
-    if (cliente && formData.valor_Total) {
+    if (!cliente) return;
+
+    // Soma todas as compras do cliente
+    const totalCompras = compras.reduce((total, compra) => {
+      return total + (compra.valor_Total || 0);
+    }, 0);
+
+    // Limite disponível
+    const limiteDisponivel = cliente.limite - totalCompras;
+
+    if (formData.valor_Total) {
       const valorCompra = parseFloat(formData.valor_Total);
-      const dividaAtual = cliente.dividaTotal || 0;
-      const limiteDisponivel = cliente.limite - dividaAtual;
 
       if (valorCompra > limiteDisponivel) {
         setLimiteAlert({
@@ -550,17 +559,22 @@ const Compras = () => {
             { style: "currency", currency: "BRL" }
           )} de limite disponível. O valor da compra excede o limite em ${(
             valorCompra - limiteDisponivel
-          ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`,
+          ).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          })}.`,
           disponivel: limiteDisponivel,
         });
-      } else {
-        setLimiteAlert({
-          show: false,
-          message: "",
-          disponivel: limiteDisponivel,
-        });
+
+        return;
       }
     }
+
+    setLimiteAlert({
+      show: false,
+      message: "",
+      disponivel: limiteDisponivel,
+    });
   };
 
   const handleChange = (e) => {
@@ -594,16 +608,6 @@ const Compras = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    if (limiteAlert.show) {
-      if (
-        !window.confirm(
-          `${limiteAlert.message}\n\nDeseja continuar mesmo assim?`
-        )
-      ) {
-        return;
-      }
-    }
 
     setLoading(true);
     try {
@@ -749,21 +753,36 @@ const Compras = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Empresa *
             </label>
-            <select
-              name="idEmpresa"
-              value={formData.idEmpresa}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                formErrors.idEmpresa ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Selecione uma empresa</option>
-              {empresas.map((emp) => (
-                <option key={emp.idEmpresa} value={emp.idEmpresa}>
-                  {emp.nome}
-                </option>
-              ))}
-            </select>
+            <Select
+              options={empresas.map((emp) => ({
+                value: emp.idEmpresa,
+                label: emp.nome,
+              }))}
+              value={
+                empresas
+                  .filter(
+                    (emp) => emp.idEmpresa === parseInt(formData.idEmpresa)
+                  )
+                  .map((emp) => ({
+                    value: emp.idEmpresa,
+                    label: emp.nome,
+                  }))[0] || null
+              }
+              onChange={(selectedOption) =>
+                setFormData({
+                  ...formData,
+                  idEmpresa: selectedOption
+                    ? selectedOption.value.toString()
+                    : "",
+                })
+              }
+              placeholder="Pesquisar empresa..."
+              noOptionsMessage={() => "Nenhuma empresa encontrada"}
+              isClearable
+              className={
+                formErrors.idEmpresa ? "border border-red-500 rounded-md" : ""
+              }
+            />
             {formErrors.idEmpresa && (
               <p className="mt-1 text-xs text-red-500">
                 {formErrors.idEmpresa}
@@ -818,22 +837,43 @@ const Compras = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Cliente *
             </label>
+
             <div className="flex gap-2">
-              <select
-                name="idCliente"
-                value={formData.idCliente}
-                onChange={handleChange}
-                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                  formErrors.idCliente ? "border-red-500" : "border-gray-300"
-                }`}
-              >
-                <option value="">Selecione um cliente</option>
-                {clientes.map((cli) => (
-                  <option key={cli.idCliente} value={cli.idCliente}>
-                    {cli.nome} - {cli.cpf_Cnpj}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <Select
+                  options={clientes.map((cli) => ({
+                    value: cli.idCliente,
+                    label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                  }))}
+                  value={
+                    clientes
+                      .filter(
+                        (cli) => cli.idCliente === parseInt(formData.idCliente)
+                      )
+                      .map((cli) => ({
+                        value: cli.idCliente,
+                        label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                      }))[0] || null
+                  }
+                  onChange={(selectedOption) =>
+                    setFormData({
+                      ...formData,
+                      idCliente: selectedOption
+                        ? selectedOption.value.toString()
+                        : "",
+                    })
+                  }
+                  placeholder="Pesquisar cliente..."
+                  noOptionsMessage={() => "Nenhum cliente encontrado"}
+                  isClearable
+                  className={
+                    formErrors.idCliente
+                      ? "border border-red-500 rounded-md"
+                      : ""
+                  }
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowClienteModal(true)}
@@ -843,13 +883,23 @@ const Compras = () => {
                 <UserPlusIcon className="h-5 w-5" />
               </button>
             </div>
+
             {formErrors.idCliente && (
               <p className="mt-1 text-xs text-red-500">
                 {formErrors.idCliente}
               </p>
             )}
+
             {clienteSelecionado && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p
+                className={`mt-1 text-sm font-semibold ${
+                  limiteAlert.disponivel <= 0
+                    ? "text-red-600"
+                    : limiteAlert.disponivel < clienteSelecionado.limite * 0.3
+                    ? "text-yellow-600"
+                    : "text-green-600"
+                }`}
+              >
                 Limite disponível: {formatCurrency(limiteAlert.disponivel)}
               </p>
             )}
