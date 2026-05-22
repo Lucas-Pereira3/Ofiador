@@ -38,5 +38,54 @@ namespace Ofiador.Infrastructure.Repository
         {
             _context.SaveChanges();
         }
+
+        //Buscar Faturas
+        public Fatura? BuscarFatura(int idFatura)
+        {
+            return _context.Faturas.Include(f=> f.Cliente)
+                .Include(f=>f.CompraParcelas)
+                .ThenInclude(cp => cp.Compra)
+                .FirstOrDefault(f=>f.IdFatura==idFatura);
+        }
+
+        
+        //Buscar Parcelas Pendentes
+        public List<CompraParcela>BuscarParecelaPendente(
+            int? clienteId,
+            int? mes,
+            int? ano
+            )
+        {
+            var query = _context.CompraParcelas
+                .Include(cp => cp.Compra)
+                .ThenInclude(c => c.Cliente)
+                .AsQueryable();
+
+            //Apenas Pendentes
+            query = query.Where(cp => !cp.Pago);
+
+            //Filtrar cliente
+            if (clienteId.HasValue)
+            {
+                query = query.Where(cp=>
+                cp.Compra.IdCliente == clienteId.Value );
+            }
+
+            //Filtrar mes
+            if (mes.HasValue)
+            {
+                query =query.Where(cp =>
+                cp.DataVencimento.Month == mes.Value );
+            }
+
+            //Filtrar ano
+            if (ano.HasValue)
+            {
+                query = query.Where(cp =>
+                cp.DataVencimento.Year == ano.Value );
+            }
+
+            return query.ToList();
+        }
     }
 }

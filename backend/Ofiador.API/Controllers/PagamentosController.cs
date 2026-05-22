@@ -23,8 +23,8 @@ namespace Ofiador.API.Controllers
             _pagamentoService = pagamentoService;
         }
 
-        [HttpPost]
-        public IActionResult CriarPagamento([FromBody] PagamentoDTOs dto)
+        [HttpPost("parcela")]
+        public IActionResult CriarPagamento([FromBody] PagamentoParcelaDTOs dto)
         {
             try
             {
@@ -32,7 +32,7 @@ namespace Ofiador.API.Controllers
                     .PagarParcela
                     (
                        dto.IdParcela,
-                       dto.ValorPago
+                       dto.MetodoPagamento
                     );
                 return Ok(pagamento);
             }
@@ -45,32 +45,50 @@ namespace Ofiador.API.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult ListarPagamento()
-        {
-            var pagamentos = _context.Pagamentos
-            .Include(p => p.Fatura)
-            .ToList();
-
-            return Ok(pagamentos);
-        }
-
-        [HttpPut("pagar-parcela/{id}")]
-        public IActionResult PagarParcela(int id, [FromBody] decimal ValorPago)
+        [HttpPost("fatura")]
+        public IActionResult PagarFatura([FromBody] PagamentoFaturaDTOs dto)
         {
             try
             {
-                var pagamento = _pagamentoService.PagarParcela(id, ValorPago);
+                var pagamento = _pagamentoService.PagarFatura(
+                    dto.IdFatura,
+                    dto.MetodoPagamento);
 
-                return Ok(pagamento);
+                return Ok(new
+                {
+                    mensagem = "Fatura paga com sucesso", pagamento
+                });
             }
             catch (Exception ex)
             {
                 return BadRequest(new
                 {
-                    erro = ex.Message,
+                    erro = ex.Message
                 });
             }
+        }
+
+        [HttpGet]
+        public IActionResult ListarPagamento()
+        {
+            var pagamentos = _context.Pagamentos
+            .Include(p => p.Fatura).ThenInclude(f =>f.Cliente)
+            .ToList();
+
+            return Ok(pagamentos);
+        }
+
+       
+
+        [HttpGet("parcelas-pendentes")]
+        public IActionResult BuscarParcelasPendentes(int? clienteId, int? mes, int? ano) 
+        {
+            var parcelas = _pagamentoService.BuscarParcelasPendentes(
+                clienteId,
+                mes,
+                ano);
+
+            return Ok(parcelas);
         }
     }
 }

@@ -184,8 +184,8 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
     setPagando(true);
     try {
       // Chamar API para pagar fatura
-      await api.patch(`/faturas/${faturaAtualizada.idFatura}/pagar`, {
-        valorPago: faturaAtualizada.total,
+      await api.post("/pagamentos/fatura", {idFatura:faturaAtualizada.idFatura,
+        metodoPagamento: "pix"
       });
 
       toast.success("Fatura paga com sucesso!");
@@ -637,20 +637,29 @@ const Pagamentos = () => {
     }
   };
 
-  const handleFaturaChange = (selectedOption) => {
-    if (selectedOption) {
-      const fatura = faturasPendentes.find(
-        (f) => f.idFatura === selectedOption.value
-      );
-      setFaturaSelecionadaForm(fatura);
-      setParcelaSelecionada("todas");
-      if (fatura) {
-        setValorPago(fatura.total.toString());
+  const handleFaturaChange = async (selectedOption) => {
+      if (selectedOption) {
+          try {
+              const response = await api.get(`/faturas/${selectedOption.value}`);
+
+              const fatura = response.data;
+
+              setFaturaSelecionadaForm(fatura);
+
+              setParcelaSelecionada("todas");
+
+              setValorPago(fatura.total.toString());
+          } catch (error) {
+              console.error("Erro ao buscar fatura:", error);
+
+              toast.error("Erro ao carregar parcelas");
+          }
       }
-    } else {
-      setFaturaSelecionadaForm(null);
-      setValorPago("");
-    }
+      else {
+          setFaturaSelecionadaForm(null);
+
+          setValorPago("");
+      }
   };
 
   const handleParcelaChange = (parcela) => {
@@ -660,26 +669,42 @@ const Pagamentos = () => {
       setValorPago(faturaSelecionadaForm.total.toString());
     } else if (parcela !== "todas" && faturaSelecionadaForm?.compraParcelas) {
       const parcelaData =
-        faturaSelecionadaForm.compraParcelas[parseInt(parcela) - 1];
+        faturaSelecionadaForm?.compraParcelas?.find(p=>p.idCompraParcela.toString() === parcela);
       if (parcelaData) {
         setValorPago(parcelaData.valorParcela.toString());
       }
     }
   };
 
-  const getParcelasOptions = () => {
-    if (!faturaSelecionadaForm?.compraParcelas) return [];
+    const getParcelasOptions = () => {
 
-    const options = [{ value: "todas", label: "Todas" }];
-    faturaSelecionadaForm.compraParcelas.forEach((parcela, index) => {
-      if (!parcela.pago) {
-        options.push({
-          value: (index + 1).toString(),
-          label: `${index + 1}/${faturaSelecionadaForm.parcelas}`,
-        });
-      }
-    });
-    return options;
+        console.log(faturaSelecionadaForm?.compraParcelas)
+
+      const options = [
+          {
+              value: "todas",
+              label: "Todas"
+          }
+      ];
+
+      if (!faturaSelecionadaForm?.compraParcelas)
+          return options;
+
+      faturaSelecionadaForm?.compraParcelas?.forEach((parcela) => {
+              console.log("PARCELA:", parcela);
+
+              const status = parcela.status?.toString().toLowerCase();
+          if (status === "pendente" ||
+              status === 1
+              ) {
+                  options.push({
+                      value: parcela.idCompraParcela.toString(),
+
+                      label: `${parcela.numeroParcela}/` + `${parcela.compra?.parcelas || "-"}`
+                  });
+              }
+          });
+      return options;
   };
 
   const handleAbrirConfirmacao = () => {
@@ -693,10 +718,7 @@ const Pagamentos = () => {
       return;
     }
 
-    if (!valorPago || parseFloat(valorPago) <= 0) {
-      toast.error("Informe o valor pago");
-      return;
-    }
+    
 
     setConfirmData({
       cliente: clienteSelecionado.nome,
@@ -712,7 +734,8 @@ const Pagamentos = () => {
     setShowConfirmModal(true);
   };
 
-  const handleConfirmPayment = async () => {
+    const handleConfirmPayment = async () => {
+        console.log(parcelaSelecionada);
     setSubmitting(true);
 
     try {
@@ -721,26 +744,20 @@ const Pagamentos = () => {
         parcelaSelecionada !== "todas" &&
         faturaSelecionadaForm?.compraParcelas
       ) {
-        const parcela =
-          faturaSelecionadaForm.compraParcelas[
-            parseInt(parcelaSelecionada) - 1
-          ];
+          const parcela =
+              faturaSelecionadaForm?.compraParcelas.find(p => p.idCompraParcela.toString() === parcelaSelecionada);
 
         if (!parcela) {
           throw new Error("Parcela não encontrada");
         }
 
         // Chamar API para pagar parcela específica
-        await api.put(
-          `/pagamentos/pagar-parcela/${parcela.idCompraParcela}`,
-          parseFloat(valorPago)
-        );
+          await api.post("/pagamentos/parcela", { idParcela: parseInt(parcelaSelecionada), metodoPagamento });
+        
         toast.success("Pagamento registrado com sucesso!");
       } else {
         // Pagamento total da fatura
-        await api.patch(`/faturas/${faturaSelecionadaForm.idFatura}/pagar`, {
-          valorPago: parseFloat(valorPago),
-        });
+          await api.post("/pagamentos/fatura", {idFatura: faturaSelecionadaForm.idFatura, metodoPagamento});
         toast.success("Fatura paga com sucesso!");
       }
 
@@ -911,7 +928,7 @@ const Pagamentos = () => {
               <Select
                 options={getParcelasOptions()}
                 value={getParcelasOptions().find(
-                  (opt) => opt.value === parcelaSelecionada
+                  (opt) => opt.value.toString() === parcelaSelecionada.toString()
                 )}
                 onChange={(opt) => handleParcelaChange(opt?.value || "todas")}
                 placeholder="Selecione a parcela..."
@@ -929,9 +946,9 @@ const Pagamentos = () => {
                   R$
                 </span>
                 <input
-                  type="number"
-                  value={valorPago}
-                  onChange={(e) => setValorPago(e.target.value)}
+                  type="text"
+                  value={formatCurrency(parseFloat(valorPago || 0))}
+                  readOnly
                   step="0.01"
                   min="0.01"
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C]"
@@ -1106,7 +1123,9 @@ const Pagamentos = () => {
                         {pagamento.fatura?.cliente?.nome || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        -
+                        {getMetodoLabel(
+                            pagamento.metodoPagamento
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {formatCurrency(pagamento.valorPago)}

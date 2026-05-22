@@ -62,7 +62,7 @@ namespace Ofiador.Application.Services
         }
 
         //Pagar Fatura
-        public Pagamento PagarFatura(int idFatura, decimal valorPago)
+        public List<Pagamento> PagarFatura(int idFatura, string metodoPagamento)
         {
             //buscar fatura
             var fatura = _repository.BuscarFatura(idFatura);
@@ -78,43 +78,40 @@ namespace Ofiador.Application.Services
                 throw new Exception("Fatura já esta Paga");
             }
 
-            //criar pagamento
-            var pagamento = new Pagamento
+            var pagamentos = new List<Pagamento>();
+
+            var parcelasPendentes = fatura.CompraParcelas.Where(cp=> !cp.Pago).ToList();
+
+            foreach (var parcelas in parcelasPendentes) 
             {
-                IdFatura = fatura.IdFatura,
+                parcelas.Pago= true;
 
-                ValorPago = valorPago,
+                parcelas.Status = Statusparcela.Pago;
 
-                Data_Pagamento = DateTime.UtcNow,
-            };
+                parcelas.DataPagamento= DateTime.UtcNow;
 
-            //Atualizar status
-            fatura.Status = "PAGO";
+                var pagamento = new Pagamento 
+                { 
+                    IdFatura = fatura.IdFatura,
 
-            //Buscar Parcelas da Fatura
-            var parcelas = _repository.BuscarParcelasFatura(idFatura);
+                    ValorPago= parcelas.ValorParcela,
 
-            foreach (var parcela in parcelas)
-            {
-                parcela.Pago = true;
+                    Data_Pagamento= DateTime.UtcNow,
 
-                parcela.Status = Statusparcela.Pago;
+                    MetodoPagamento = metodoPagamento,
+                };
 
-                parcela.DataPagamento = DateTime.UtcNow;
+                pagamentos.Add(pagamento);
 
-                //atualizar progresso
-                if(parcela.Compra != null && parcela.Compra.ParcelasPagas < parcela.Compra.Parcelas)
-                {
-                    parcela.Compra.ParcelasPagas++;
-                }
+                _repository.AdicionarPagamento(pagamento);
+
             }
 
-            //Salvar pagamento
-            _repository.AdicionarPagamento(pagamento);
+            fatura.Status = "PAGO";
 
             _repository.Salvar();
 
-            return pagamento;
+            return pagamentos;
         }
     }
 }

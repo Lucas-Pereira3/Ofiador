@@ -9,6 +9,7 @@ namespace Ofiador.Domain.Entities
 
     public int IdFatura {get; set;}
 
-    public Fatura? Fatura{get; set;}
+     public string MetodoPagamento { get; set; }  = string.Empty;
+     public Fatura? Fatura{get; set;}
     }
 }
