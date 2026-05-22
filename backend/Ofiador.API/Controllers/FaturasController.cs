@@ -47,6 +47,8 @@ namespace Ofiador.API.Controllers
         [HttpGet]
         public IActionResult ListarFaturas()
         {
+            _faturaService.AtualizarFaturasVencidas();
+
             var faturas= _context.Faturas
                 .Include(f=> f.Cliente)
                 .Include(f=> f.CompraParcelas).ThenInclude(cp => cp.Compra)

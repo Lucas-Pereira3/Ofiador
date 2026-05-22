@@ -61,6 +61,22 @@ namespace Ofiador.Application.Services
             return fatura;
         }
 
+        public void AtualizarFaturasVencidas()
+        {
+            var faturasVencidas = _repository.BuscarFaturasPendentes()
+                .Where(f =>
+                    f.Vencimento < DateTime.UtcNow &&
+                    f.Status.ToUpper() == "PENDENTE")
+                .ToList();
+
+            foreach (var fatura in faturasVencidas)
+            {
+                fatura.Status = "ATRASADA";
+            }
+
+            _repository.Salvar();
+        }
+
         //Pagar Fatura
         public List<Pagamento> PagarFatura(int idFatura, string metodoPagamento)
         {

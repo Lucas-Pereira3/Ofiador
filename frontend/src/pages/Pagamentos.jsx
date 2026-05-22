@@ -8,8 +8,6 @@ import {
   DocumentTextIcon,
   CreditCardIcon,
   BanknotesIcon,
-  EnvelopeIcon,
-  PrinterIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
@@ -149,8 +147,6 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
   const [pagando, setPagando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [faturaAtualizada, setFaturaAtualizada] = useState(fatura);
-  const [gerarRecibo, setGerarRecibo] = useState(true);
-  const [enviarEmail, setEnviarEmail] = useState(false);
 
   useEffect(() => {
     setFaturaAtualizada(fatura);
@@ -184,8 +180,9 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
     setPagando(true);
     try {
       // Chamar API para pagar fatura
-      await api.post("/pagamentos/fatura", {idFatura:faturaAtualizada.idFatura,
-        metodoPagamento: "pix"
+      await api.post("/pagamentos/fatura", {
+        idFatura: faturaAtualizada.idFatura,
+        metodoPagamento: "pix",
       });
 
       toast.success("Fatura paga com sucesso!");
@@ -196,14 +193,6 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
       onStatusUpdate(faturaAtualizada.idFatura, "PAGO");
 
       setShowConfirmModal(false);
-
-      // Se tiver opção de gerar recibo, mostrar mensagem
-      if (gerarRecibo) {
-        toast.success("Recibo gerado com sucesso!");
-      }
-      if (enviarEmail) {
-        toast.success("Comprovante enviado por e-mail!");
-      }
     } catch (error) {
       console.error("Erro ao pagar fatura:", error);
       toast.error(error.response?.data?.erro || "Erro ao pagar fatura");
@@ -394,36 +383,6 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
           </div>
 
           <div className="border-t border-gray-200 px-6 py-4 flex justify-between items-center">
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={gerarRecibo}
-                  onChange={(e) => setGerarRecibo(e.target.checked)}
-                  className="rounded border-gray-300 text-[#1A2B4C] focus:ring-[#1A2B4C]"
-                  disabled={isPaga}
-                />
-                <span className="text-sm text-gray-700 flex items-center gap-1">
-                  <PrinterIcon className="h-4 w-4" />
-                  Gerar Recibo
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={enviarEmail}
-                  onChange={(e) => setEnviarEmail(e.target.checked)}
-                  className="rounded border-gray-300 text-[#1A2B4C] focus:ring-[#1A2B4C]"
-                  disabled={isPaga}
-                />
-                <span className="text-sm text-gray-700 flex items-center gap-1">
-                  <EnvelopeIcon className="h-4 w-4" />
-                  Enviar comprovante por email
-                </span>
-              </label>
-            </div>
-
             <div className="flex space-x-3">
               <button
                 onClick={onClose}
@@ -538,6 +497,7 @@ const Pagamentos = () => {
   const [itemsPerPage] = useState(5);
   const [faturaSelecionada, setFaturaSelecionada] = useState(null);
   const [showDetalhesModal, setShowDetalhesModal] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   // Form state
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
@@ -548,8 +508,6 @@ const Pagamentos = () => {
   const [dataPagamento, setDataPagamento] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [gerarRecibo, setGerarRecibo] = useState(true);
-  const [enviarEmail, setEnviarEmail] = useState(false);
 
   // Modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -638,28 +596,27 @@ const Pagamentos = () => {
   };
 
   const handleFaturaChange = async (selectedOption) => {
-      if (selectedOption) {
-          try {
-              const response = await api.get(`/faturas/${selectedOption.value}`);
+    if (selectedOption) {
+      try {
+        const response = await api.get(`/faturas/${selectedOption.value}`);
 
-              const fatura = response.data;
+        const fatura = response.data;
 
-              setFaturaSelecionadaForm(fatura);
+        setFaturaSelecionadaForm(fatura);
 
-              setParcelaSelecionada("todas");
+        setParcelaSelecionada("todas");
 
-              setValorPago(fatura.total.toString());
-          } catch (error) {
-              console.error("Erro ao buscar fatura:", error);
+        setValorPago(fatura.total.toString());
+      } catch (error) {
+        console.error("Erro ao buscar fatura:", error);
 
-              toast.error("Erro ao carregar parcelas");
-          }
+        toast.error("Erro ao carregar parcelas");
       }
-      else {
-          setFaturaSelecionadaForm(null);
+    } else {
+      setFaturaSelecionadaForm(null);
 
-          setValorPago("");
-      }
+      setValorPago("");
+    }
   };
 
   const handleParcelaChange = (parcela) => {
@@ -668,43 +625,41 @@ const Pagamentos = () => {
     if (parcela === "todas" && faturaSelecionadaForm) {
       setValorPago(faturaSelecionadaForm.total.toString());
     } else if (parcela !== "todas" && faturaSelecionadaForm?.compraParcelas) {
-      const parcelaData =
-        faturaSelecionadaForm?.compraParcelas?.find(p=>p.idCompraParcela.toString() === parcela);
+      const parcelaData = faturaSelecionadaForm?.compraParcelas?.find(
+        (p) => p.idCompraParcela.toString() === parcela
+      );
       if (parcelaData) {
         setValorPago(parcelaData.valorParcela.toString());
       }
     }
   };
 
-    const getParcelasOptions = () => {
+  const getParcelasOptions = () => {
+    console.log(faturaSelecionadaForm?.compraParcelas);
 
-        console.log(faturaSelecionadaForm?.compraParcelas)
+    const options = [
+      {
+        value: "todas",
+        label: "Todas",
+      },
+    ];
 
-      const options = [
-          {
-              value: "todas",
-              label: "Todas"
-          }
-      ];
+    if (!faturaSelecionadaForm?.compraParcelas) return options;
 
-      if (!faturaSelecionadaForm?.compraParcelas)
-          return options;
+    faturaSelecionadaForm?.compraParcelas?.forEach((parcela) => {
+      console.log("PARCELA:", parcela);
 
-      faturaSelecionadaForm?.compraParcelas?.forEach((parcela) => {
-              console.log("PARCELA:", parcela);
+      const status = parcela.status?.toString().toLowerCase();
+      if (status === "pendente" || status === 1) {
+        options.push({
+          value: parcela.idCompraParcela.toString(),
 
-              const status = parcela.status?.toString().toLowerCase();
-          if (status === "pendente" ||
-              status === 1
-              ) {
-                  options.push({
-                      value: parcela.idCompraParcela.toString(),
-
-                      label: `${parcela.numeroParcela}/` + `${parcela.compra?.parcelas || "-"}`
-                  });
-              }
-          });
-      return options;
+          label:
+            `${parcela.numeroParcela}/` + `${parcela.compra?.parcelas || "-"}`,
+        });
+      }
+    });
+    return options;
   };
 
   const handleAbrirConfirmacao = () => {
@@ -717,8 +672,6 @@ const Pagamentos = () => {
       toast.error("Selecione uma fatura");
       return;
     }
-
-    
 
     setConfirmData({
       cliente: clienteSelecionado.nome,
@@ -734,8 +687,8 @@ const Pagamentos = () => {
     setShowConfirmModal(true);
   };
 
-    const handleConfirmPayment = async () => {
-        console.log(parcelaSelecionada);
+  const handleConfirmPayment = async () => {
+    console.log(parcelaSelecionada);
     setSubmitting(true);
 
     try {
@@ -744,20 +697,27 @@ const Pagamentos = () => {
         parcelaSelecionada !== "todas" &&
         faturaSelecionadaForm?.compraParcelas
       ) {
-          const parcela =
-              faturaSelecionadaForm?.compraParcelas.find(p => p.idCompraParcela.toString() === parcelaSelecionada);
+        const parcela = faturaSelecionadaForm?.compraParcelas.find(
+          (p) => p.idCompraParcela.toString() === parcelaSelecionada
+        );
 
         if (!parcela) {
           throw new Error("Parcela não encontrada");
         }
 
         // Chamar API para pagar parcela específica
-          await api.post("/pagamentos/parcela", { idParcela: parseInt(parcelaSelecionada), metodoPagamento });
-        
+        await api.post("/pagamentos/parcela", {
+          idParcela: parseInt(parcelaSelecionada),
+          metodoPagamento,
+        });
+
         toast.success("Pagamento registrado com sucesso!");
       } else {
         // Pagamento total da fatura
-          await api.post("/pagamentos/fatura", {idFatura: faturaSelecionadaForm.idFatura, metodoPagamento});
+        await api.post("/pagamentos/fatura", {
+          idFatura: faturaSelecionadaForm.idFatura,
+          metodoPagamento,
+        });
         toast.success("Fatura paga com sucesso!");
       }
 
@@ -775,14 +735,6 @@ const Pagamentos = () => {
       setDataPagamento(new Date().toISOString().split("T")[0]);
 
       setShowConfirmModal(false);
-
-      // Opções adicionais
-      if (gerarRecibo) {
-        toast.success("Recibo gerado com sucesso!");
-      }
-      if (enviarEmail) {
-        toast.success("Comprovante enviado por e-mail!");
-      }
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
       toast.error(error.response?.data?.erro || "Erro ao registrar pagamento");
@@ -861,10 +813,20 @@ const Pagamentos = () => {
                 Cliente *
               </label>
               <Select
-                options={clientes.map((cli) => ({
-                  value: cli.idCliente,
-                  label: `${cli.nome} - ${cli.cpf_Cnpj}`,
-                }))}
+                options={clientes
+                  .filter((cli) => {
+                    // sem pesquisa → mostra só 6
+                    if (!inputValue) return true;
+
+                    return `${cli.nome} - ${cli.cpf_Cnpj}`
+                      .toLowerCase()
+                      .includes(inputValue.toLowerCase());
+                  })
+                  .slice(0, inputValue ? clientes.length : 6)
+                  .map((cli) => ({
+                    value: cli.idCliente,
+                    label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                  }))}
                 value={
                   clienteSelecionado
                     ? {
@@ -874,9 +836,11 @@ const Pagamentos = () => {
                     : null
                 }
                 onChange={handleClienteChange}
-                placeholder="Selecione um cliente..."
+                onInputChange={(value) => setInputValue(value)}
+                placeholder="Pesquisar cliente..."
                 noOptionsMessage={() => "Nenhum cliente encontrado"}
                 isClearable
+                menuPlacement="auto"
               />
             </div>
 
@@ -928,7 +892,8 @@ const Pagamentos = () => {
               <Select
                 options={getParcelasOptions()}
                 value={getParcelasOptions().find(
-                  (opt) => opt.value.toString() === parcelaSelecionada.toString()
+                  (opt) =>
+                    opt.value.toString() === parcelaSelecionada.toString()
                 )}
                 onChange={(opt) => handleParcelaChange(opt?.value || "todas")}
                 placeholder="Selecione a parcela..."
@@ -993,35 +958,6 @@ const Pagamentos = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C]"
               />
             </div>
-          </div>
-
-          {/* Opções adicionais */}
-          <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-6">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={gerarRecibo}
-                onChange={(e) => setGerarRecibo(e.target.checked)}
-                className="rounded border-gray-300 text-[#1A2B4C] focus:ring-[#1A2B4C]"
-              />
-              <span className="text-sm text-gray-700 flex items-center gap-1">
-                <PrinterIcon className="h-4 w-4" />
-                Gerar Recibo
-              </span>
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={enviarEmail}
-                onChange={(e) => setEnviarEmail(e.target.checked)}
-                className="rounded border-gray-300 text-[#1A2B4C] focus:ring-[#1A2B4C]"
-              />
-              <span className="text-sm text-gray-700 flex items-center gap-1">
-                <EnvelopeIcon className="h-4 w-4" />
-                Enviar comprovante por email
-              </span>
-            </label>
           </div>
 
           {/* Botões */}
@@ -1123,9 +1059,7 @@ const Pagamentos = () => {
                         {pagamento.fatura?.cliente?.nome || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {getMetodoLabel(
-                            pagamento.metodoPagamento
-                        )}
+                        {getMetodoLabel(pagamento.metodoPagamento)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {formatCurrency(pagamento.valorPago)}

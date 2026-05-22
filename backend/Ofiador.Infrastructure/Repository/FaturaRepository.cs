@@ -28,6 +28,14 @@ namespace Ofiador.Infrastructure.Repository
             f.MesReferencia.Year == mesReferencia.Year);
         }
 
+        //Buscar Faturas Pendentes
+        public List<Fatura> BuscarFaturasPendentes()
+        {
+            return _context.Faturas
+                .Where(f => f.Status.ToUpper() == "PENDENTE")
+                .ToList();
+        }
+
         //Buscar Parcela do Mes
         public List<CompraParcela> BuscarParcela(int idCliente, DateTime mesReferencia)
         {
