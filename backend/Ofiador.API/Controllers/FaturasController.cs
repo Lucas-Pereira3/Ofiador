@@ -191,36 +191,7 @@ var comprasEmAberto = fatura.CompraParcelas
             return Ok(faturas);
         }
 
-        [Authorize]
-        [HttpPatch("{id}/pagar")]
-        public IActionResult PagarFatura(int id, [FromBody] PagamentoFaturaDTOs dto) 
-        {
-            try
-            {
-                var pagamento = _faturaService.PagarFatura(id, dto.ValorPago);
-
-                return Ok(new
-                {
-                    mensagem = "Fatura paga com sucesso",
-                    pagamento
-                });
-            }
-            catch (Exception ex) 
-            { 
-                if(ex.Message.Contains("não encontrado"))
-                {
-                    return NotFound(new
-                    {
-                        erro = ex.Message
-                   
-                    });
-                }
-
-                return BadRequest(new
-                {
-                    erro =ex.Message
-                });
-            }
-        }
+        
+        
     }
 }

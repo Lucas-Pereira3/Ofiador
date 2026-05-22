@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Migrations;
+using Ofiador.Application.DTOs;
 namespace Ofiador.Application.Services
 {
     public class PagamentoService
@@ -17,7 +18,7 @@ namespace Ofiador.Application.Services
             _context = context;
         }
 
-        public Pagamento PagarParcela(int idParcela, decimal valorPago)
+        public Pagamento PagarParcela(int idParcela, string metodoPagamento)
         {
             var parcela = _repository.BuscarParcela(idParcela);
 
@@ -45,7 +46,10 @@ namespace Ofiador.Application.Services
             {
                 Data_Pagamento = DateTime.UtcNow,
 
-                ValorPago = valorPago,
+                ValorPago = parcela.ValorParcela,
+
+
+                MetodoPagamento = metodoPagamento,
 
                 IdFatura = parcela.IdFatura
             };
@@ -71,6 +75,86 @@ namespace Ofiador.Application.Services
             {
                 parcela.Fatura.Status = "PAGO";
             }
+            _repository.Salvar();
+
+            return pagamento;
+        }
+
+        //Buscar Parcelas Pendentes
+        public List<ParcelaDTO>BuscarParcelasPendentes(
+            int? clienteId,
+            int? mes,
+            int? ano
+            )
+        {
+            var parcelas = _repository.BuscarParecelaPendente(
+                clienteId,
+                mes,
+                ano
+                );
+
+            return parcelas.Select(cp=>
+            new ParcelaDTO
+            {
+                IdCompraParcela = cp.idCompraParcela,
+
+                NumeroParcela = cp.NumeroParcela,
+
+                ValorParcela = cp.ValorParcela,
+
+                Status = cp.Status.ToString(),
+
+                Pago = cp.Pago,
+
+                Datapagamento = cp.DataPagamento,
+
+                DataCompra = cp.Compra.Data_Compra,
+
+                Cliente = cp.Compra.Cliente.Nome
+            }).ToList();
+        }
+
+        //Pagar Fatura
+        public Pagamento PagarFatura(int idFatura, string metodoPagamento)
+        {
+            var fatura = _repository.BuscarFatura(idFatura);
+
+            
+            if(fatura == null)
+            {
+                throw new Exception("Fatura não encontrada");
+            }
+
+            if(fatura.Status.ToUpper() == "PAGO")
+            {
+                throw new Exception("Fatura já foi pagga");
+            }
+
+            //pagar parcelas
+            foreach(var parcela in fatura.CompraParcelas.Where(p=> !p.Pago))
+            {
+                parcela.Pago = true;
+
+                parcela.Status = Statusparcela.Pago;
+
+                parcela.DataPagamento = DateTime.UtcNow;
+            }
+
+            fatura.Status = "PAGO";
+
+            var pagamento = new Pagamento 
+            { 
+                Data_Pagamento = DateTime.UtcNow,
+
+                ValorPago = fatura.Total,
+
+                MetodoPagamento = metodoPagamento,
+
+                IdFatura = fatura.IdFatura,
+            };
+
+            _repository.AdicionarPagamento(pagamento);
+
             _repository.Salvar();
 
             return pagamento;

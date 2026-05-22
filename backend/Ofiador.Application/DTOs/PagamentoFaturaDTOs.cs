@@ -6,6 +6,8 @@ namespace Ofiador.Application.DTOs
 {
     public class PagamentoFaturaDTOs
     {
-        public Decimal ValorPago {  get; set; }
+        public int IdFatura {  get; set; }
+
+        public string MetodoPagamento {  get; set; } = string.Empty;
     }
 }

@@ -8,6 +8,8 @@ namespace Ofiador.Application.DTOs
     {
         public decimal Valor_Total { get; set; }
 
+        public DateTime? Data_Compra { get; set; }
+
         public int Parcelas { get; set; }
 
         public int IdCliente { get; set; }

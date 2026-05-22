@@ -88,7 +88,9 @@ namespace Ofiador.Application.Services
             DateTimeKind.Utc
         );
 
-                var fatura = _repository.BuscarFatura(compra.IdCliente, mesReferencia);
+         
+
+                var fatura = _repository.BuscarFaturaAberta(compra.IdCliente, mesReferencia);
 
         if (fatura == null)
         {
@@ -154,5 +156,11 @@ namespace Ofiador.Application.Services
 
     return compra;
 }
+        public List<Compra> BuscarCompraCliente(int idCliente)
+        {
+            return _repository.BuscarCompraCliente(idCliente);
+        }
     }
+
+    
 }

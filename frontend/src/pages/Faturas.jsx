@@ -180,16 +180,20 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
     setPagando(true);
 
     try {
-      await api.patch(`/faturas/${faturaAtualizada.idFatura}/pagar`, {
-        valorPago: faturaAtualizada.total,
-      });
+        await api.post("/pagamentos/fatura", {idFatura: faturaAtualizada.idFatura, metodoPagamento: "SISTEMA"})
 
       toast.success("Fatura paga com sucesso!");
 
       // Atualiza status local
       const novaFatura = {
         ...faturaAtualizada,
-        status: "PAGO",
+          status: "PAGO",
+
+          compraParcelas:
+              faturaAtualizada?.compraParcelas?.map((parcela) => ({
+                  ...parcela,
+                  status: "Pago",
+              })) || []
       };
 
       setFaturaAtualizada(novaFatura);
@@ -388,7 +392,7 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
           >
             Fechar
           </button>
-          {faturaAtualizada?.status !== "Pago" && (
+          {faturaAtualizada?.status?.toUpperCase() !== "PAGO" && (
             <button
               onClick={handlePagarFatura}
               disabled={pagando}
@@ -688,7 +692,8 @@ const Faturas = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <ParcelasProgresso
-                        pagas={0}
+                                pagas={fatura.compraParcelas?.filter((p) =>
+                                    p.status?.toLowerCase() === "pago").length || 0}
                         total={fatura.parcelas || 1}
                       />
                     </td>

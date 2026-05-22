@@ -7,7 +7,7 @@ namespace Ofiador.Application.DTOs
         [Required]
         public int IdParcela { get; set; }
 
-        [Required]
-        public decimal ValorPago { get; set; }
+        public string MetodoPagamento { get; set; }
+           = string.Empty;
     }
 }

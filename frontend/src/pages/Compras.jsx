@@ -537,45 +537,43 @@ const Compras = () => {
     }
   };
 
-  const checkLimiteCredito = (cliente) => {
-    if (!cliente) return;
+    const checkLimiteCredito = (cliente) => {
+        if (!cliente) return;
 
-    // Soma todas as compras do cliente
-    const totalCompras = compras.reduce((total, compra) => {
-      return total + (compra.valor_Total || 0);
-    }, 0);
+        // Limite disponível
+        const limiteDisponivel = cliente.limite - (cliente.divida || 0);
 
-    // Limite disponível
-    const limiteDisponivel = cliente.limite - totalCompras;
+        if (formData.valor_Total) {
+            const valorCompra = parseFloat(formData.valor_Total);
 
-    if (formData.valor_Total) {
-      const valorCompra = parseFloat(formData.valor_Total);
+            if (valorCompra > limiteDisponivel) {
+                setLimiteAlert({
+                    show: true,
+                    message: `⚠️ Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
+                        "pt-BR",
+                        { style: "currency", currency: "BRL" }
+                    )} de limite disponível. O valor da compra excede o limite em ${(
+                        valorCompra - limiteDisponivel
+                    ).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                    })}.`,
+                    disponivel: limiteDisponivel,
+                });
 
-      if (valorCompra > limiteDisponivel) {
+                return;
+            }
+        }
+
         setLimiteAlert({
-          show: true,
-          message: `⚠️ Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
-            "pt-BR",
-            { style: "currency", currency: "BRL" }
-          )} de limite disponível. O valor da compra excede o limite em ${(
-            valorCompra - limiteDisponivel
-          ).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          })}.`,
-          disponivel: limiteDisponivel,
+            show: false,
+            message: "",
+            disponivel: limiteDisponivel,
         });
+    };
+        
+}
 
-        return;
-      }
-    }
-
-    setLimiteAlert({
-      show: false,
-      message: "",
-      disponivel: limiteDisponivel,
-    });
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -1,4 +1,5 @@
-﻿using Ofiador.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
 namespace Ofiador.Infrastructure.Repository
 {
@@ -47,6 +48,16 @@ namespace Ofiador.Infrastructure.Repository
                 f.MesReferencia.Year == mesReferencia.Year);
         }
 
+        //Buscar Fatura Aberta
+        public Fatura? BuscarFaturaAberta(int clienteId, DateTime mesReferencia)
+        {
+            return _context.Faturas
+                .FirstOrDefault(f =>
+                f.IdCliente == clienteId &&
+                f.MesReferencia == mesReferencia &&
+                f.Status != "PAGO");
+        }
+
         //adicionar Fatura
         public void AdicionarFatura(Fatura fatura)
         {
@@ -75,6 +86,16 @@ namespace Ofiador.Infrastructure.Repository
             _context.Entry(compra).Reference(e => e.Empresa).Load();
 
             _context.Entry(compra).Collection(cp => cp.CompraParcelas).Load();
+        }
+
+        public List<Compra> BuscarCompraCliente(int idCliente)
+        {
+            return _context.Compras
+                .Where(c=> c.IdCliente==idCliente)
+                .Include(c=>c.CompraParcelas)
+                .Include(c=> c.Cliente)
+                .Include (c=> c.Empresa)
+                .ToList();
         }
     }
 }
