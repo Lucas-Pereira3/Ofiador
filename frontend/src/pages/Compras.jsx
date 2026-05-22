@@ -461,6 +461,8 @@ const Compras = () => {
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [inputValue, setInputValue] = useState("");
+  const [empresaInputValue, setEmpresaInputValue] = useState("");
 
   const [formData, setFormData] = useState({
     idEmpresa: "",
@@ -537,43 +539,40 @@ const Compras = () => {
     }
   };
 
-    const checkLimiteCredito = (cliente) => {
-        if (!cliente) return;
+  const checkLimiteCredito = (cliente) => {
+    if (!cliente) return;
 
-        // Limite disponível
-        const limiteDisponivel = cliente.limite - (cliente.divida || 0);
+    // Limite disponível
+    const limiteDisponivel = cliente.limite - (cliente.divida || 0);
 
-        if (formData.valor_Total) {
-            const valorCompra = parseFloat(formData.valor_Total);
+    if (formData.valor_Total) {
+      const valorCompra = parseFloat(formData.valor_Total);
 
-            if (valorCompra > limiteDisponivel) {
-                setLimiteAlert({
-                    show: true,
-                    message: `⚠️ Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
-                        "pt-BR",
-                        { style: "currency", currency: "BRL" }
-                    )} de limite disponível. O valor da compra excede o limite em ${(
-                        valorCompra - limiteDisponivel
-                    ).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                    })}.`,
-                    disponivel: limiteDisponivel,
-                });
-
-                return;
-            }
-        }
-
+      if (valorCompra > limiteDisponivel) {
         setLimiteAlert({
-            show: false,
-            message: "",
-            disponivel: limiteDisponivel,
+          show: true,
+          message: `⚠️ Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
+            "pt-BR",
+            { style: "currency", currency: "BRL" }
+          )} de limite disponível. O valor da compra excede o limite em ${(
+            valorCompra - limiteDisponivel
+          ).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          })}.`,
+          disponivel: limiteDisponivel,
         });
-    };
-        
-}
 
+        return;
+      }
+    }
+
+    setLimiteAlert({
+      show: false,
+      message: "",
+      disponivel: limiteDisponivel,
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -752,10 +751,20 @@ const Compras = () => {
               Empresa *
             </label>
             <Select
-              options={empresas.map((emp) => ({
-                value: emp.idEmpresa,
-                label: emp.nome,
-              }))}
+              options={empresas
+                .filter((emp) => {
+                  // se não digitou nada, mostra só 6
+                  if (!empresaInputValue) return true;
+
+                  return emp.nome
+                    .toLowerCase()
+                    .includes(empresaInputValue.toLowerCase());
+                })
+                .slice(0, empresaInputValue ? empresas.length : 6)
+                .map((emp) => ({
+                  value: emp.idEmpresa,
+                  label: emp.nome,
+                }))}
               value={
                 empresas
                   .filter(
@@ -774,9 +783,11 @@ const Compras = () => {
                     : "",
                 })
               }
+              onInputChange={(value) => setEmpresaInputValue(value)}
               placeholder="Pesquisar empresa..."
               noOptionsMessage={() => "Nenhuma empresa encontrada"}
               isClearable
+              menuPlacement="auto"
               className={
                 formErrors.idEmpresa ? "border border-red-500 rounded-md" : ""
               }
@@ -839,10 +850,20 @@ const Compras = () => {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Select
-                  options={clientes.map((cli) => ({
-                    value: cli.idCliente,
-                    label: `${cli.nome} - ${cli.cpf_Cnpj}`,
-                  }))}
+                  options={clientes
+                    .filter((cli) => {
+                      // se não digitou nada, mostra só 6
+                      if (!inputValue) return true;
+
+                      return `${cli.nome} - ${cli.cpf_Cnpj}`
+                        .toLowerCase()
+                        .includes(inputValue.toLowerCase());
+                    })
+                    .slice(0, inputValue ? clientes.length : 6)
+                    .map((cli) => ({
+                      value: cli.idCliente,
+                      label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                    }))}
                   value={
                     clientes
                       .filter(
@@ -861,14 +882,11 @@ const Compras = () => {
                         : "",
                     })
                   }
+                  onInputChange={(value) => setInputValue(value)}
                   placeholder="Pesquisar cliente..."
                   noOptionsMessage={() => "Nenhum cliente encontrado"}
                   isClearable
-                  className={
-                    formErrors.idCliente
-                      ? "border border-red-500 rounded-md"
-                      : ""
-                  }
+                  menuPlacement="auto"
                 />
               </div>
 

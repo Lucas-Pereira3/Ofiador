@@ -256,6 +256,11 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSubmit(e);
+                  }
+                }}
                 className={`input mt-1 w-full ${
                   showEmailError || showEmailEmptyError
                     ? "border-red-500 focus:ring-red-500"
@@ -291,6 +296,11 @@ const Login = () => {
                   value={formData.senha}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSubmit(e);
+                    }
+                  }}
                   className={`input w-full pr-10 ${
                     showSenhaEmptyError || showSenhaError
                       ? "border-red-500 focus:ring-red-500"

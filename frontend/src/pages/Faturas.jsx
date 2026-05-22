@@ -18,6 +18,7 @@ const StatusBadge = ({ status }) => {
       case "paga":
       case "paid":
       case "pago":
+      case "PAGO":
         return { text: "Paga", color: "#108243", bg: "rgba(16, 130, 67, 0.1)" };
       case "pendente":
       case "pending":
@@ -180,26 +181,30 @@ const DetalhesFaturaModal = ({ fatura, isOpen, onClose, onStatusUpdate }) => {
     setPagando(true);
 
     try {
-        await api.post("/pagamentos/fatura", {idFatura: faturaAtualizada.idFatura, metodoPagamento: "SISTEMA"})
+      await api.post("/pagamentos/fatura", {
+        idFatura: faturaAtualizada.idFatura,
+        metodoPagamento: "SISTEMA",
+      });
 
       toast.success("Fatura paga com sucesso!");
 
       // Atualiza status local
+      const parcelasAtualizadas =
+        faturaAtualizada?.compraParcelas?.map((parcela) => ({
+          ...parcela,
+          status: "PAGO",
+        })) || [];
+
       const novaFatura = {
         ...faturaAtualizada,
-          status: "PAGO",
-
-          compraParcelas:
-              faturaAtualizada?.compraParcelas?.map((parcela) => ({
-                  ...parcela,
-                  status: "Pago",
-              })) || []
+        status: "PAGO",
+        compraParcelas: parcelasAtualizadas,
       };
 
       setFaturaAtualizada(novaFatura);
 
-      // Atualiza lista principal
-      onStatusUpdate(faturaAtualizada.idFatura, "PAGO");
+      // Atualiza lista principal COMPLETA
+      onStatusUpdate(novaFatura);
     } catch (error) {
       console.error("Erro ao pagar fatura:", error);
 
@@ -464,13 +469,14 @@ const Faturas = () => {
     }
   };
 
-  const handleStatusUpdate = (id, novoStatus) => {
-    setFaturas(
-      faturas.map((f) => (f.idFatura === id ? { ...f, status: novoStatus } : f))
+  const handleStatusUpdate = (faturaAtualizada) => {
+    setFaturas((prev) =>
+      prev.map((f) =>
+        f.idFatura === faturaAtualizada.idFatura ? faturaAtualizada : f
+      )
     );
-    if (faturaSelecionada?.idFatura === id) {
-      setFaturaSelecionada({ ...faturaSelecionada, status: novoStatus });
-    }
+
+    setFaturaSelecionada(faturaAtualizada);
   };
 
   // Filtrar faturas
@@ -570,6 +576,22 @@ const Faturas = () => {
               loadingMessage={() => "Carregando..."}
               isClearable
               className="text-sm"
+              // deixa scroll
+              menuPlacement="auto"
+              // filtra apenas os primeiros 6 resultados encontrados
+              filterOption={(option, inputValue) => {
+                const termo = inputValue.toLowerCase();
+
+                const filtrados = clientes
+                  .filter((cliente) =>
+                    cliente.nome.toLowerCase().includes(termo)
+                  )
+                  .slice(0, 6);
+
+                return filtrados.some(
+                  (cliente) => cliente.idCliente === option.value
+                );
+              }}
             />
           </div>
 
@@ -583,8 +605,9 @@ const Faturas = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1A2B4C]"
             >
               <option value="">Todos os status</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Paga">Paga</option>
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+              <option value="atrasada">Atrasado</option>
             </select>
           </div>
 
@@ -692,9 +715,12 @@ const Faturas = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <ParcelasProgresso
-                                pagas={fatura.compraParcelas?.filter((p) =>
-                                    p.status?.toLowerCase() === "pago").length || 0}
-                        total={fatura.parcelas || 1}
+                        pagas={
+                          fatura.compraParcelas?.filter(
+                            (p) => p.status?.toLowerCase() === "pago"
+                          ).length || 0
+                        }
+                        total={fatura.compraParcelas?.length || 1}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
