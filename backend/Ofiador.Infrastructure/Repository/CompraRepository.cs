@@ -54,7 +54,8 @@ namespace Ofiador.Infrastructure.Repository
             return _context.Faturas
                 .FirstOrDefault(f =>
                 f.IdCliente == clienteId &&
-                f.MesReferencia == mesReferencia &&
+                f.MesReferencia.Month == mesReferencia.Month &&
+                f.MesReferencia.Year == mesReferencia.Year &&
                 f.Status != "PAGO");
         }
 
@@ -96,6 +97,17 @@ namespace Ofiador.Infrastructure.Repository
                 .Include(c=> c.Cliente)
                 .Include (c=> c.Empresa)
                 .ToList();
+        }
+
+        //Buscar fatura por id
+        public Fatura? BuscarFaturaPorId(int idFatura)
+        {
+            return _context.Faturas
+
+                .Include(f => f.CompraParcelas)
+
+                .FirstOrDefault(f =>
+                    f.IdFatura == idFatura);
         }
     }
 }
