@@ -13,34 +13,31 @@ namespace Ofiador.API.Repositories
             _context = context;
         }
 
-        public async Task<List<Fatura>> GetContasReceber(DateTime? dataInicial, DateTime? dataFinal)
+        public async Task<List<Fatura>> GetContasReceber(
+            DateTime? dataInicial,
+            DateTime? dataFinal)
         {
-            if (dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
-            {
-                throw new Exception("Data inicial não pode ser maiorr que a data final");
-            }
-
             var faturas = _context.Faturas
                 .Include(f => f.Cliente)
                 .Include(f => f.Pagamentos)
                 .Include(f => f.CompraParcelas)
                 .AsQueryable();
 
-            //Filtro de data Final
-            if (dataFinal.HasValue)
-            {
-                faturas = faturas.Where(f => f.DataGeracao <= dataFinal.Value);
-            }
-
-            //Filtro de data Inicial
+            // Filtro data inicial
             if (dataInicial.HasValue)
             {
-                faturas = faturas.Where(f => f.DataGeracao >= dataInicial.Value);
+                faturas = faturas.Where(f =>
+                    f.DataGeracao >= dataInicial.Value);
             }
 
+            // Filtro data final
+            if (dataFinal.HasValue)
+            {
+                faturas = faturas.Where(f =>
+                    f.DataGeracao <= dataFinal.Value);
+            }
 
-            
             return await faturas.ToListAsync();
-      }
+        }
     }
 }
