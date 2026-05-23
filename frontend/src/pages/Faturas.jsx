@@ -717,10 +717,10 @@ const Faturas = () => {
                       <ParcelasProgresso
                         pagas={
                           fatura.compraParcelas?.filter(
-                            (p) => p.status?.toLowerCase() === "pago"
+                            (p) => p.status === 1 || p.status?.toString().toUpperCase()=== "PAGO"
                           ).length || 0
                         }
-                        total={fatura.compraParcelas?.length || 1}
+                        total={fatura.compraParcelas?.length ?? 0}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

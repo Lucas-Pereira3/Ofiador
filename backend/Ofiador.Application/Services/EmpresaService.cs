@@ -144,7 +144,7 @@ public class EmpresaService
 
         if (existe)
         {
-            return(false,"já eciste uma empresa com esse Cnpj");
+            return(false,"já existe uma empresa com esse Cnpj");
         }
 
             _repositort.Adicionar(empresa);

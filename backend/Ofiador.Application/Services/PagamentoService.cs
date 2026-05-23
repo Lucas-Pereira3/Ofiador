@@ -37,6 +37,8 @@ namespace Ofiador.Application.Services
 
             parcela.Status = Statusparcela.Pago;
 
+            parcela.Compra.ParcelasPagas += 1;
+
             parcela.DataPagamento = DateTime.UtcNow;
 
             _repository.Salvar();
@@ -134,6 +136,8 @@ namespace Ofiador.Application.Services
             foreach(var parcela in fatura.CompraParcelas.Where(p=> !p.Pago))
             {
                 parcela.Pago = true;
+
+                parcela.Compra.ParcelasPagas += 1;
 
                 parcela.Status = Statusparcela.Pago;
 

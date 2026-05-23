@@ -286,7 +286,7 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Clientes no Limite</p>
+                          <p className="text-sm text-gray-500">Limite Excedido</p>
               <p
                 className="text-2xl font-bold mt-1"
                 style={{ color: "#CFC01A" }}
