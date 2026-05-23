@@ -15,7 +15,7 @@ namespace Ofiador.API.Repositories
 
         public async Task<List<Fatura>> GetContasReceber(DateTime? dataInicial, DateTime? dataFinal)
         {
-            if(dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
+            if (dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
             {
                 throw new Exception("Data inicial não pode ser maiorr que a data final");
             }
@@ -38,7 +38,9 @@ namespace Ofiador.API.Repositories
                 faturas = faturas.Where(f => f.DataGeracao >= dataInicial.Value);
             }
 
+
+            
             return await faturas.ToListAsync();
-        }
+      }
     }
 }
