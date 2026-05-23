@@ -16,7 +16,7 @@ namespace Ofiador.Infrastructure.Repository
         //Buscar Parcela
         public CompraParcela? BuscarParcela(int idParcela)
         {
-            return _context.CompraParcelas.Include(cp => cp.Fatura).FirstOrDefault(cp => cp.idCompraParcela == idParcela);
+            return _context.CompraParcelas.Include(cp => cp.Fatura).Include(cp => cp.Compra).FirstOrDefault(cp => cp.idCompraParcela == idParcela);
         }
 
         //verificar parcelas Pendentes

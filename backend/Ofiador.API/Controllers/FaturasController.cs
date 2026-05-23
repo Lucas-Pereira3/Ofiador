@@ -54,7 +54,41 @@ namespace Ofiador.API.Controllers
                 .Include(f=> f.CompraParcelas).ThenInclude(cp => cp.Compra)
                 .ToList();
 
-            return Ok(faturas);
+            var response = faturas.Select(f => new FaturaListaDTOs
+            {
+                IdFatura = f.IdFatura,
+
+                Total = f.Total,
+                
+                DataGeracao = f.DataGeracao,
+
+                Vencimento = f.Vencimento,
+
+                Parcelas = f.Parcelas,
+
+                IdCliente = f.IdCliente,
+
+                ClienteNome = f.Cliente?.Nome??"",
+
+                Status = f.Status,
+
+
+
+                CompraParcelas = f.CompraParcelas.Select(cp =>
+                new ParcelaDTO
+                {
+                    IdCompraParcela = cp.idCompraParcela,
+
+                    NumeroParcela = cp.NumeroParcela,
+
+                    ValorParcela = cp.ValorParcela,
+
+                    Status = cp.Status.ToString(),
+
+                    Pago = cp.Pago
+                }).ToList()
+            });
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
