@@ -5,11 +5,11 @@ namespace Ofiador.API.Controllers
 {
     [ApiController]
     [Route("relatorios")]
-    public class Relatorios_A_ReceberController : ControllerBase
+    public class RelatoriosAReceberController : ControllerBase
     {
         private readonly RelatorioService _service;
 
-        public Relatorios_A_ReceberController(RelatorioService service)
+        public RelatoriosAReceberController(RelatorioService service)
         {
             _service = service;
         }
@@ -23,12 +23,12 @@ namespace Ofiador.API.Controllers
 
                 return Ok(relatorio);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                return StatusCode(500,new
-                {
-                    erro = ex.Message
-                });
+                 return BadRequest(new
+        {
+                  erro = ex.Message
+        });
             }
         }
     }
