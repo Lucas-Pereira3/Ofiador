@@ -33,8 +33,8 @@ namespace Ofiador.Application.Services
             if(!compra.DataPrimeiroVencimento.HasValue)
             {
                 compra.DataPrimeiroVencimento = new DateTime(
-                    DateTime.UtcNow.Year,
-                    DateTime.UtcNow.Month,
+                    compra.Data_Compra.Year,
+                    compra.Data_Compra.Month,
                     1,
                     0,
                     0,
@@ -123,8 +123,7 @@ namespace Ofiador.Application.Services
                 ((compra.Parcelas - 1) * valorParcela);
         }
 
-        fatura.Total += valorAtual;
-
+        
         fatura.Parcelas++;
 
         var compraParcela = new CompraParcela
@@ -149,6 +148,25 @@ namespace Ofiador.Application.Services
 
         compra.CompraParcelas.Add(compraParcela);
     }
+
+
+            var faturasAtualizadas =
+            compra.CompraParcelas
+                .Select(cp => cp.IdFatura)
+                .Distinct();
+
+            foreach (var idFatura in faturasAtualizadas)
+            {
+                var faturaAtual =
+                    _repository.BuscarFaturaPorId(idFatura);
+
+                if (faturaAtual != null)
+                {
+                    faturaAtual.Total =
+                        faturaAtual.CompraParcelas
+                            .Sum(cp => cp.ValorParcela);
+                }
+            }
 
             _repository.Salvar();
 

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Ofiador.API.DTOs;
+using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
 
 namespace Ofiador.API.Repositories
@@ -13,31 +13,32 @@ namespace Ofiador.API.Repositories
             _context = context;
         }
 
-        public async Task<List<ContaReceberRelatorioDto>> GetContasReceber()
+        public async Task<List<Fatura>> GetContasReceber(DateTime? dataInicial, DateTime? dataFinal)
         {
-            var relatorio = await _context.Clientes
-                .Select(cliente => new ContaReceberRelatorioDto
-                {
-                    Nome = cliente.Nome,
-
-                    Total = _context.Faturas
-                        .Where(f => f.IdCliente == cliente.IdCliente)
-                        .Sum(f => (decimal?)f.Total) ?? 0,
-
-                    Pago = _context.Pagamentos
-                        .Where(p => _context.Faturas
-                            .Any(f => f.IdFatura == p.IdFatura
-                                   && f.IdCliente == cliente.IdCliente))
-                        .Sum(p => (decimal?)p.ValorPago) ?? 0
-                })
-                .ToListAsync();
-
-            foreach (var item in relatorio)
+            if(dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
             {
-                item.Restante = item.Total - item.Pago;
+                throw new Exception("Data inicial não pode ser maiorr que a data final");
             }
 
-            return relatorio;
+            var faturas = _context.Faturas
+                .Include(f => f.Cliente)
+                .Include(f => f.Pagamentos)
+                .Include(f => f.CompraParcelas)
+                .AsQueryable();
+
+            //Filtro de data Final
+            if (dataFinal.HasValue)
+            {
+                faturas = faturas.Where(f => f.DataGeracao <= dataFinal.Value);
+            }
+
+            //Filtro de data Inicial
+            if (dataInicial.HasValue)
+            {
+                faturas = faturas.Where(f => f.DataGeracao >= dataInicial.Value);
+            }
+
+            return await faturas.ToListAsync();
         }
     }
 }

@@ -15,17 +15,17 @@ namespace Ofiador.API.Controllers
         }
 
         [HttpGet("contas-a-receber")]
-        public async Task<IActionResult> GetContasReceber()
+        public async Task<IActionResult> GetContasReceber(DateTime? dataInicial, DateTime? dataFinal)
         {
             try
             {
-                var relatorio = await _service.GetContasReceber();
+                var relatorio = await _service.GetContasReceber(dataInicial, dataFinal);
 
                 return Ok(relatorio);
             }
-            catch (Exception ex)
+            catch (Exception ex) 
             {
-                return StatusCode(500, new
+                return StatusCode(500,new
                 {
                     erro = ex.Message
                 });

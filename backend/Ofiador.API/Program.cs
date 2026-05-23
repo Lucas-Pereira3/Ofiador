@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Ofiador.Infrastructure.Repository;
+using Ofiador.API.Controllers;
+using Ofiador.API.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,7 @@ builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<CompraService>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
+builder.Services.AddScoped<RelatorioService>();
 //================= Repositorys =================
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<AuthRepository>();
@@ -86,6 +89,7 @@ builder.Services.AddScoped<CompraRepository>();
 builder.Services.AddScoped<EmpresaRepository>();
 builder.Services.AddScoped<FaturaRepository>();
 builder.Services.AddScoped<PagamentoRepository>();
+builder.Services.AddScoped<RelatorioRepository>();
 //====================== JWT ========================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
