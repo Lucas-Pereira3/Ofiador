@@ -500,7 +500,6 @@ const Clientes = () => {
               <option value="Ativo">Ativo</option>
               <option value="Limite Próximo">Limite Próximo</option>
               <option value="Inadimplente">Inadimplente</option>
-              <option value="Sem limite">Sem limite</option>
             </select>
           </div>
         </div>
@@ -600,8 +599,7 @@ const Clientes = () => {
               ) : (
                 currentClientes.map((cliente) => {
                   const status = getStatusInfo(cliente);
-                  const disponivel =
-                    cliente.limite - (cliente.divida || 0);
+                  const disponivel = cliente.limite - (cliente.divida || 0);
                   return (
                     <tr
                       key={cliente.idCliente}
@@ -701,13 +699,6 @@ const Clientes = () => {
                   <span className="text-gray-600">
                     Inadimplente / Limite Esgotado
                   </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: "#9CA3AF" }}
-                  ></span>
-                  <span className="text-gray-600">Sem limite</span>
                 </div>
               </div>
 

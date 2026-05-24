@@ -86,6 +86,16 @@ namespace Ofiador.Infrastructure.Data
             .HasOne(p => p.Fatura)
             .WithMany()
             .HasForeignKey(p => p.IdFatura);
+
+            modelBuilder.Entity<Pagamento>()
+
+            .HasOne(p => p.Fatura)
+
+            .WithMany(f => f.Pagamentos)
+
+            .HasForeignKey(p => p.IdFatura)
+
+            .OnDelete(DeleteBehavior.Cascade);
         }
 
         // Por enquanto, sem DbSets - vamos adicionar depois

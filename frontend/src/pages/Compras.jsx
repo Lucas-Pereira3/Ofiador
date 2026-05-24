@@ -9,6 +9,7 @@ import {
   ExclamationTriangleIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import Select from "react-select";
 
 // Modal de cadastro rápido de cliente
 const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
@@ -110,29 +111,22 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
     setLoading(true);
     try {
       const clienteData = {
-        nome: formData.nome.trim(),
+        nome: formData.nome,
         cpf_Cnpj: formData.cpf_Cnpj.replace(/[^\d]/g, ""),
-        telefone: formData.telefone || null,
-        email: formData.email || null,
-        endereco: formData.endereco || null,
+        telefone: formData.telefone.replace(/[^\d]/g, ""),
+        email: formData.email,
+        endereco: formData.endereco,
         limite: parseFloat(formData.limite),
         idEmpresa: parseInt(formData.idEmpresa),
       };
 
       const response = await api.post("/cliente", clienteData);
+
       toast.success("Cliente cadastrado com sucesso!");
       onClienteCriado(response.data);
       onClose();
-      setFormData({
-        nome: "",
-        cpf_Cnpj: "",
-        telefone: "",
-        email: "",
-        endereco: "",
-        limite: "",
-        idEmpresa: "",
-      });
     } catch (error) {
+      console.error("Erro ao registrar cliente:", error);
       toast.error(error.response?.data?.message || "Erro ao cadastrar cliente");
     } finally {
       setLoading(false);
@@ -300,33 +294,54 @@ const SimulacaoParcelas = ({
   valorTotal,
   numeroParcelas,
   dataPrimeiroVencimento,
+  dataCompra,
 }) => {
   const [parcelas, setParcelas] = useState([]);
 
   useEffect(() => {
-    if (valorTotal > 0 && numeroParcelas > 0 && dataPrimeiroVencimento) {
-      const valorParcela = valorTotal / numeroParcelas;
+    if (valorTotal > 0 && numeroParcelas > 0) {
+      const valorParcela = Number((valorTotal / numeroParcelas).toFixed(2));
       const parcelasArray = [];
 
-      const [ano, mes, dia] = dataPrimeiroVencimento.split("-").map(Number);
-      const dataBase = new Date(ano, mes - 1, dia);
+      let dataBase;
+
+      if (dataPrimeiroVencimento) {
+        const [ano, mes, dia] = dataPrimeiroVencimento.split("-").map(Number);
+        dataBase = new Date(ano, mes - 1, dia);
+      } else if (dataCompra) {
+        const [ano, mes, dia] = dataCompra.split("-").map(Number);
+        dataBase = new Date(ano, mes, 1);
+      } else {
+        return;
+      }
 
       for (let i = 0; i < numeroParcelas; i++) {
-        const dataVencimento = new Date(ano, mes - 1, dia);
+        const dataVencimento = new Date(dataBase);
+
         if (i > 0) {
           dataVencimento.setMonth(dataVencimento.getMonth() + i);
         }
+
+        let valorAtual = valorParcela;
+
+        // última parcela recebe a diferença
+        if (i === numeroParcelas - 1) {
+          valorAtual = Number(
+            (valorTotal - valorParcela * (numeroParcelas - 1)).toFixed(2)
+          );
+        }
+
         parcelasArray.push({
           numero: i + 1,
           vencimento: dataVencimento.toLocaleDateString("pt-BR"),
-          valor: valorParcela,
+          valor: valorAtual,
         });
       }
       setParcelas(parcelasArray);
     } else {
       setParcelas([]);
     }
-  }, [valorTotal, numeroParcelas, dataPrimeiroVencimento]);
+  }, [valorTotal, numeroParcelas, dataPrimeiroVencimento, dataCompra]);
 
   if (parcelas.length === 0) return null;
 
@@ -446,6 +461,8 @@ const Compras = () => {
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [inputValue, setInputValue] = useState("");
+  const [empresaInputValue, setEmpresaInputValue] = useState("");
 
   const [formData, setFormData] = useState({
     idEmpresa: "",
@@ -467,7 +484,6 @@ const Compras = () => {
   useEffect(() => {
     loadEmpresas();
     loadClientes();
-    loadAllCompras();
   }, []);
 
   useEffect(() => {
@@ -487,10 +503,10 @@ const Compras = () => {
   }, [formData.idCliente, clientes]);
 
   useEffect(() => {
-    if (clienteSelecionado && formData.valor_Total) {
+    if (clienteSelecionado) {
       checkLimiteCredito(clienteSelecionado);
     }
-  }, [formData.valor_Total]);
+  }, [formData.valor_Total, compras, clienteSelecionado]);
 
   const loadEmpresas = async () => {
     try {
@@ -510,43 +526,27 @@ const Compras = () => {
     }
   };
 
-  const loadAllCompras = async () => {
+  const filterComprasByCliente = async (clienteId) => {
     try {
-      const response = await api.get("/compras");
-      console.log("Todas as compras:", response.data);
-      window.allCompras = response.data;
-    } catch (error) {
-      console.error("Erro ao carregar compras:", error);
-    }
-  };
-
-  const filterComprasByCliente = (clienteId) => {
-    if (window.allCompras) {
-      const filtered = window.allCompras.filter(
-        (c) => c.idCliente === parseInt(clienteId)
-      );
-      setCompras(filtered);
-      setLoadingCompras(false);
-    } else {
       setLoadingCompras(true);
-      api
-        .get(`/compras/cliente/${clienteId}`)
-        .then((response) => {
-          setCompras(response.data);
-          setLoadingCompras(false);
-        })
-        .catch((error) => {
-          console.error("Erro:", error);
-          setLoadingCompras(false);
-        });
+      const response = await api.get(`/compras/cliente/${clienteId}`);
+      setCompras(response.data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao carregar histórico");
+    } finally {
+      setLoadingCompras(false);
     }
   };
 
   const checkLimiteCredito = (cliente) => {
-    if (cliente && formData.valor_Total) {
+    if (!cliente) return;
+
+    // Limite disponível
+    const limiteDisponivel = cliente.limite - (cliente.divida || 0);
+
+    if (formData.valor_Total) {
       const valorCompra = parseFloat(formData.valor_Total);
-      const dividaAtual = cliente.dividaTotal || 0;
-      const limiteDisponivel = cliente.limite - dividaAtual;
 
       if (valorCompra > limiteDisponivel) {
         setLimiteAlert({
@@ -556,17 +556,22 @@ const Compras = () => {
             { style: "currency", currency: "BRL" }
           )} de limite disponível. O valor da compra excede o limite em ${(
             valorCompra - limiteDisponivel
-          ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`,
+          ).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          })}.`,
           disponivel: limiteDisponivel,
         });
-      } else {
-        setLimiteAlert({
-          show: false,
-          message: "",
-          disponivel: limiteDisponivel,
-        });
+
+        return;
       }
     }
+
+    setLimiteAlert({
+      show: false,
+      message: "",
+      disponivel: limiteDisponivel,
+    });
   };
 
   const handleChange = (e) => {
@@ -601,16 +606,6 @@ const Compras = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    if (limiteAlert.show) {
-      if (
-        !window.confirm(
-          `${limiteAlert.message}\n\nDeseja continuar mesmo assim?`
-        )
-      ) {
-        return;
-      }
-    }
-
     setLoading(true);
     try {
       const [ano, mes, dia] = formData.data_Compra.split("-").map(Number);
@@ -625,19 +620,33 @@ const Compras = () => {
         parcelas: parseInt(formData.parcelas),
       };
 
-      console.log("Enviando dados:", compraData);
-
-      const response = await api.post("/compras", compraData);
-      console.log("Resposta:", response.data);
-      toast.success("Compra registrada com sucesso!");
-
-      await loadAllCompras();
-      if (formData.idCliente) {
-        filterComprasByCliente(formData.idCliente);
+      if (
+        formData.dataPrimeiroVencimento &&
+        formData.dataPrimeiroVencimento.trim() !== ""
+      ) {
+        const [anoVenc, mesVenc, diaVenc] = formData.dataPrimeiroVencimento
+          .split("-")
+          .map(Number);
+        const dataPrimeiroVencimentoISO = new Date(
+          Date.UTC(anoVenc, mesVenc - 1, diaVenc, 12, 0, 0)
+        ).toISOString();
+        compraData.dataPrimeiroVencimento = dataPrimeiroVencimentoISO;
       }
 
+      console.log("Enviando dados:", compraData);
+      const response = await api.post("/compras", compraData);
+
+      toast.success("Compra registrada com sucesso!");
+
+      if (formData.idCliente) {
+        await filterComprasByCliente(formData.idCliente);
+      }
+
+      await loadClientes();
+
       setFormData({
-        ...formData,
+        idEmpresa: "",
+        idCliente: "",
         valor_Total: "",
         data_Compra: new Date().toISOString().split("T")[0],
         parcelas: 1,
@@ -647,10 +656,12 @@ const Compras = () => {
       console.error("Erro ao registrar compra:", error);
       console.error("Detalhes do erro:", error.response?.data);
 
-      if (error.response?.data?.message) {
+      if (error.response?.data?.erro) {
+        toast.error(error.response.data.erro);
+      } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else if (error.response?.data) {
-        toast.error(error.response.data);
+        toast.error(JSON.stringify(error.response.data));
       } else {
         toast.error("Erro ao registrar compra");
       }
@@ -665,7 +676,6 @@ const Compras = () => {
     toast.success("Cliente adicionado e selecionado automaticamente");
   };
 
-  // Paginação das compras
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCompras = compras.slice(indexOfFirstItem, indexOfLastItem);
@@ -686,20 +696,23 @@ const Compras = () => {
 
   const formatDate = (date) => {
     if (!date) return "-";
-    if (typeof date === "string") {
-      if (date.includes("T")) {
-        const [ano, mes, dia] = date.split("T")[0].split("-");
-        return `${dia}/${mes}/${ano}`;
+
+    try {
+      // Se a string for "0001-01-01T00:00:00", retornar "-"
+      if (typeof date === "string" && date.startsWith("0001")) {
+        return "-";
       }
-      if (date.includes("-")) {
-        const [ano, mes, dia] = date.split("-");
-        return `${dia}/${mes}/${ano}`;
-      }
+
+      const dataObj = new Date(date);
+
+      if (isNaN(dataObj.getTime())) return "-";
+
+      // Formatar para o padrão brasileiro
+      return dataObj.toLocaleDateString("pt-BR");
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "-";
     }
-    if (date instanceof Date) {
-      return date.toLocaleDateString("pt-BR");
-    }
-    return "-";
   };
 
   const valorTotalNum = parseFloat(formData.valor_Total) || 0;
@@ -719,7 +732,6 @@ const Compras = () => {
         </div>
       </div>
 
-      {/* Alerta de limite de crédito */}
       {limiteAlert.show && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
           <div className="flex items-center">
@@ -729,32 +741,57 @@ const Compras = () => {
         </div>
       )}
 
-      {/* Formulário de Compra */}
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-lg border border-gray-200 p-6 space-y-6"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Empresa */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Empresa *
             </label>
-            <select
-              name="idEmpresa"
-              value={formData.idEmpresa}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                formErrors.idEmpresa ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Selecione uma empresa</option>
-              {empresas.map((emp) => (
-                <option key={emp.idEmpresa} value={emp.idEmpresa}>
-                  {emp.nome}
-                </option>
-              ))}
-            </select>
+            <Select
+              options={empresas
+                .filter((emp) => {
+                  // se não digitou nada, mostra só 6
+                  if (!empresaInputValue) return true;
+
+                  return emp.nome
+                    .toLowerCase()
+                    .includes(empresaInputValue.toLowerCase());
+                })
+                .slice(0, empresaInputValue ? empresas.length : 6)
+                .map((emp) => ({
+                  value: emp.idEmpresa,
+                  label: emp.nome,
+                }))}
+              value={
+                empresas
+                  .filter(
+                    (emp) => emp.idEmpresa === parseInt(formData.idEmpresa)
+                  )
+                  .map((emp) => ({
+                    value: emp.idEmpresa,
+                    label: emp.nome,
+                  }))[0] || null
+              }
+              onChange={(selectedOption) =>
+                setFormData({
+                  ...formData,
+                  idEmpresa: selectedOption
+                    ? selectedOption.value.toString()
+                    : "",
+                })
+              }
+              onInputChange={(value) => setEmpresaInputValue(value)}
+              placeholder="Pesquisar empresa..."
+              noOptionsMessage={() => "Nenhuma empresa encontrada"}
+              isClearable
+              menuPlacement="auto"
+              className={
+                formErrors.idEmpresa ? "border border-red-500 rounded-md" : ""
+              }
+            />
             {formErrors.idEmpresa && (
               <p className="mt-1 text-xs text-red-500">
                 {formErrors.idEmpresa}
@@ -762,7 +799,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Data da Compra */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Data da Compra *
@@ -783,7 +819,6 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Valor Total */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Valor Total * (R$)
@@ -807,27 +842,54 @@ const Compras = () => {
             )}
           </div>
 
-          {/* Cliente com botão de cadastro rápido */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Cliente *
             </label>
+
             <div className="flex gap-2">
-              <select
-                name="idCliente"
-                value={formData.idCliente}
-                onChange={handleChange}
-                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                  formErrors.idCliente ? "border-red-500" : "border-gray-300"
-                }`}
-              >
-                <option value="">Selecione um cliente</option>
-                {clientes.map((cli) => (
-                  <option key={cli.idCliente} value={cli.idCliente}>
-                    {cli.nome} - {cli.cpf_Cnpj}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <Select
+                  options={clientes
+                    .filter((cli) => {
+                      // se não digitou nada, mostra só 6
+                      if (!inputValue) return true;
+
+                      return `${cli.nome} - ${cli.cpf_Cnpj}`
+                        .toLowerCase()
+                        .includes(inputValue.toLowerCase());
+                    })
+                    .slice(0, inputValue ? clientes.length : 6)
+                    .map((cli) => ({
+                      value: cli.idCliente,
+                      label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                    }))}
+                  value={
+                    clientes
+                      .filter(
+                        (cli) => cli.idCliente === parseInt(formData.idCliente)
+                      )
+                      .map((cli) => ({
+                        value: cli.idCliente,
+                        label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                      }))[0] || null
+                  }
+                  onChange={(selectedOption) =>
+                    setFormData({
+                      ...formData,
+                      idCliente: selectedOption
+                        ? selectedOption.value.toString()
+                        : "",
+                    })
+                  }
+                  onInputChange={(value) => setInputValue(value)}
+                  placeholder="Pesquisar cliente..."
+                  noOptionsMessage={() => "Nenhum cliente encontrado"}
+                  isClearable
+                  menuPlacement="auto"
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowClienteModal(true)}
@@ -837,19 +899,28 @@ const Compras = () => {
                 <UserPlusIcon className="h-5 w-5" />
               </button>
             </div>
+
             {formErrors.idCliente && (
               <p className="mt-1 text-xs text-red-500">
                 {formErrors.idCliente}
               </p>
             )}
+
             {clienteSelecionado && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p
+                className={`mt-1 text-sm font-semibold ${
+                  limiteAlert.disponivel <= 0
+                    ? "text-red-600"
+                    : limiteAlert.disponivel < clienteSelecionado.limite * 0.3
+                    ? "text-yellow-600"
+                    : "text-green-600"
+                }`}
+              >
                 Limite disponível: {formatCurrency(limiteAlert.disponivel)}
               </p>
             )}
           </div>
 
-          {/* Data do Primeiro Vencimento */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Data do 1º Vencimento
@@ -862,11 +933,10 @@ const Compras = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C]"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Usada apenas para simulação das parcelas
+              Se não preenchido, será usado o primeiro dia do próximo mês
             </p>
           </div>
 
-          {/* Número de Parcelas */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nº de Parcelas *
@@ -888,20 +958,20 @@ const Compras = () => {
           </div>
         </div>
 
-        {/* Simulação de Parcelas */}
         <SimulacaoParcelas
           valorTotal={valorTotalNum}
           numeroParcelas={numeroParcelasNum}
           dataPrimeiroVencimento={formData.dataPrimeiroVencimento}
+          dataCompra={formData.data_Compra}
         />
 
-        {/* Botões */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => {
               setFormData({
-                ...formData,
+                idEmpresa: "",
+                idCliente: "",
                 valor_Total: "",
                 data_Compra: new Date().toISOString().split("T")[0],
                 parcelas: 1,
@@ -922,7 +992,6 @@ const Compras = () => {
         </div>
       </form>
 
-      {/* Histórico de Compras do Cliente */}
       {formData.idCliente && (
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
@@ -977,7 +1046,6 @@ const Compras = () => {
                       </th>
                     </tr>
                   </thead>
-
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentCompras.map((compra) => (
                       <tr
@@ -997,7 +1065,7 @@ const Compras = () => {
                           {compra.parcelas}x
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {compra.empresa?.nome || "-"}
+                          {compra.empresa || "-"}
                         </td>
                       </tr>
                     ))}
@@ -1005,7 +1073,6 @@ const Compras = () => {
                 </table>
               </div>
 
-              {/* Paginação */}
               {totalPages > 1 && (
                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-sm text-gray-500">
@@ -1025,7 +1092,6 @@ const Compras = () => {
         </div>
       )}
 
-      {/* Modal de cadastro rápido de cliente */}
       <ClienteRapidoModal
         isOpen={showClienteModal}
         onClose={() => setShowClienteModal(false)}

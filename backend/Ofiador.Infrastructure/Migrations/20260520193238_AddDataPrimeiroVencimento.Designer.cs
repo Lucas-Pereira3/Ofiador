@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ofiador.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Ofiador.Infrastructure.Data;
 namespace Ofiador.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260520193238_AddDataPrimeiroVencimento")]
+    partial class AddDataPrimeiroVencimento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -253,10 +256,6 @@ namespace Ofiador.Infrastructure.Migrations
                     b.Property<int>("IdFatura")
                         .HasColumnType("integer");
 
-                    b.Property<string>("MetodoPagamento")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<decimal>("ValorPago")
                         .HasColumnType("numeric");
 
@@ -355,7 +354,7 @@ namespace Ofiador.Infrastructure.Migrations
             modelBuilder.Entity("Ofiador.Domain.Entities.Pagamento", b =>
                 {
                     b.HasOne("Ofiador.Domain.Entities.Fatura", "Fatura")
-                        .WithMany("Pagamentos")
+                        .WithMany()
                         .HasForeignKey("IdFatura")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -371,8 +370,6 @@ namespace Ofiador.Infrastructure.Migrations
             modelBuilder.Entity("Ofiador.Domain.Entities.Fatura", b =>
                 {
                     b.Navigation("CompraParcelas");
-
-                    b.Navigation("Pagamentos");
                 });
 #pragma warning restore 612, 618
         }

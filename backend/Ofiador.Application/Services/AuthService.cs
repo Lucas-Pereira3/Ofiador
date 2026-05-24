@@ -1,5 +1,6 @@
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
+using Ofiador.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -7,11 +8,11 @@ namespace Ofiador.Application.Services
 {
     public class AuthService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly AuthRepository _authRepository;
 
-        public AuthService(ApplicationDbContext context)
+        public AuthService(AuthRepository authRepository)
         {
-            _context = context;
+            _authRepository = authRepository;
         }
 
         public bool EmailValido(string login)
@@ -29,7 +30,7 @@ namespace Ofiador.Application.Services
         // VERIFICAR SE EMAIL JÁ EXISTE
         public bool EmailExiste(string login)
         {
-            return _context.Usuarios.Any(u => u.Login == login);
+            return _authRepository.EmailExiste(login);
         }
 
         public (bool sucesso, string mensagem, Usuario? usuario) CriarUsuario(string nome, string login, string senha)
@@ -58,16 +59,14 @@ namespace Ofiador.Application.Services
             
             usuario.DefinirSenha(senha);
 
-            _context.Usuarios.Add(usuario);
-            _context.SaveChanges();
+            _authRepository.Adicionar(usuario);
 
             return (true,"Usuario Cadastrdado com sucesso", usuario);
         }
 
         public Usuario? BuscarPorLogin(string login)
         {
-            return _context.Usuarios
-                .FirstOrDefault(u => u.Login == login);
+            return _authRepository.BuscarLogin(login);
         }
 
         public bool VerificarSenha(string senha, string hash)

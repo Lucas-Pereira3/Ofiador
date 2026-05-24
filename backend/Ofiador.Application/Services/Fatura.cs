@@ -1,22 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Repository;
 
 namespace Ofiador.Application.Services
 {
     public class FaturaService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly FaturaRepository _repository;
 
-        public FaturaService(ApplicationDbContext context)
+        public FaturaService(FaturaRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         public Fatura GerarFatura(int idCliente, DateTime mesReferencia)
         {
             //validar cliente
-            var cliente  = _context.Clientes.FirstOrDefault(c => c.IdCliente == idCliente);
+            var cliente = _repository.BuscarCliente(idCliente);
 
             if(cliente == null)
             {
@@ -24,11 +25,7 @@ namespace Ofiador.Application.Services
             }
 
             //verifica se fatura já existe
-            var faturaExistente = _context.Faturas
-                .FirstOrDefault(f =>
-                    f.IdCliente == idCliente &&
-                    f.MesReferencia.Month == mesReferencia.Month &&
-                    f.MesReferencia.Year == mesReferencia.Year);
+            var faturaExistente = _repository.BuscarFaturaExistente(idCliente, mesReferencia);
 
             if(faturaExistente != null)
             {
@@ -36,13 +33,7 @@ namespace Ofiador.Application.Services
             }
 
             //Busca parcela do mês
-            var parcelas = _context.CompraParcelas
-                .Include(cp => cp.Compra)
-                .Where(cp =>
-                    cp.Compra.IdCliente == idCliente &&
-                    cp.DataVencimento.Month == mesReferencia.Month &&
-                    cp.DataVencimento.Year == mesReferencia.Year)
-                .ToList();
+            var parcelas = _repository.BuscarParcela(idCliente, mesReferencia);
 
             //soma total
             var total = parcelas.Sum(p => p.ValorParcela);
@@ -65,11 +56,78 @@ namespace Ofiador.Application.Services
                 DataGeracao = DateTime.UtcNow,
             };
 
-            _context.Faturas.Add(fatura);
-
-            _context.SaveChanges();
+            _repository.Adicionar(fatura);
 
             return fatura;
+        }
+
+        public void AtualizarFaturasVencidas()
+        {
+            var faturasVencidas = _repository.BuscarFaturasPendentes()
+                .Where(f =>
+                    f.Vencimento < DateTime.UtcNow &&
+                    f.Status.ToUpper() == "PENDENTE")
+                .ToList();
+
+            foreach (var fatura in faturasVencidas)
+            {
+                fatura.Status = "ATRASADA";
+            }
+
+            _repository.Salvar();
+        }
+
+        //Pagar Fatura
+        public List<Pagamento> PagarFatura(int idFatura, string metodoPagamento)
+        {
+            //buscar fatura
+            var fatura = _repository.BuscarFatura(idFatura);
+
+            if(fatura == null)
+            {
+                throw new Exception("Fatura não encontrada");
+            }
+
+            //Impedir pagamento duplicado
+            if(fatura.Status == "PAGO")
+            {
+                throw new Exception("Fatura já esta Paga");
+            }
+
+            var pagamentos = new List<Pagamento>();
+
+            var parcelasPendentes = fatura.CompraParcelas.Where(cp=> !cp.Pago).ToList();
+
+            foreach (var parcelas in parcelasPendentes) 
+            {
+                parcelas.Pago= true;
+
+                parcelas.Status = Statusparcela.Pago;
+
+                parcelas.DataPagamento= DateTime.UtcNow;
+
+                var pagamento = new Pagamento 
+                { 
+                    IdFatura = fatura.IdFatura,
+
+                    ValorPago= parcelas.ValorParcela,
+
+                    Data_Pagamento= DateTime.UtcNow,
+
+                    MetodoPagamento = metodoPagamento,
+                };
+
+                pagamentos.Add(pagamento);
+
+                _repository.AdicionarPagamento(pagamento);
+
+            }
+
+            fatura.Status = "PAGO";
+
+            _repository.Salvar();
+
+            return pagamentos;
         }
     }
 }

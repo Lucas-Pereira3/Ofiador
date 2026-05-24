@@ -1,19 +1,40 @@
 using System.Text.RegularExpressions;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
+using Ofiador.Infrastructure.Repository;
 
 namespace Ofiador.Application.Services{
 public class EmpresaService
 {
-    private readonly ApplicationDbContext _context;
+        private readonly EmpresaRepository _repositort;
 
-    public EmpresaService(ApplicationDbContext context)
+    public EmpresaService(EmpresaRepository repository)
     {
-        _context = context;
+        _repositort = repository;
     }
+        //Telefone Valido
+        public bool TelefoneValido(string telefone)
+        {
+            //Remover oque não for numero
+            telefone = Regex.Replace(telefone, @"[^\d]", "");
 
-    //Validação do Cnpj
-    public bool CnpjValido(string cnpj)
+            //telefone fixo = 10
+            //celular = 11
+            if (telefone.Length < 10 || telefone.Length > 11)
+            {
+                return false;
+            }
+
+            //impede sequencia repetida
+            if (new string(telefone[0], telefone.Length) == telefone)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        //Validação do Cnpj
+        public bool CnpjValido(string cnpj)
     {
         cnpj = Regex.Replace(cnpj,@"[^\d]","");
 
@@ -58,7 +79,7 @@ public class EmpresaService
     //Cnpj Existente
     public bool cnpjExiste(string cnpj)
     {
-        return _context.Empresas.Any(e => e.Cnpj == cnpj);
+            return _repositort.CnpjExiste(cnpj);
     }
 
     //Validação de Email
@@ -72,7 +93,7 @@ public class EmpresaService
     // VERIFICAR SE EMAIL JÁ EXISTE
         public bool EmailExiste(string email)
         {
-            return _context.Empresas.Any(e => e.Email == email);
+            return _repositort.EmailExiste(email);
         }
     public (bool sucesso, string mensagem) CriarEmpresa(Empresa empresa)
     {
@@ -92,6 +113,15 @@ public class EmpresaService
                 return (false, "Email é obrigatório");
             }
 
+            if (string.IsNullOrWhiteSpace(empresa.Telefone))
+            {
+                return (false, "Telefone é obrigatório");
+            }
+
+            if (!TelefoneValido(empresa.Telefone))
+            {
+                return (false, "Telefone inválido");
+            }
             if (!EmailValido(empresa.Email))
             {
                 return (false,"Email inválido");
@@ -110,16 +140,14 @@ public class EmpresaService
             return(false,"CNPJ inválido");
         }
 
-        var existe = _context.Empresas.Any(e => e.Cnpj == empresa.Cnpj);
+        var existe = _repositort.CnpjExiste(empresa.Cnpj);
 
         if (existe)
         {
-            return(false,"já eciste uma empresa com esse Cnpj");
+            return(false,"já existe uma empresa com esse Cnpj");
         }
 
-        _context.Empresas.Add(empresa);
-
-        _context.SaveChanges();
+            _repositort.Adicionar(empresa);
 
         return (true, "empresa cadastrada com sucesso");
     }

@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Ofiador.API
 {
-    public class JwtService
+    public class Jwt
     {
         private readonly IConfiguration _configuration;
 
-        public JwtService(IConfiguration configuration)
+        public Jwt(IConfiguration configuration)
         {
             _configuration = configuration;
         }

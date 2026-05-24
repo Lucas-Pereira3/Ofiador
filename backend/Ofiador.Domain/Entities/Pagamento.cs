@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 namespace Ofiador.Domain.Entities
 {
     public class Pagamento{
@@ -9,6 +10,9 @@ namespace Ofiador.Domain.Entities
 
     public int IdFatura {get; set;}
 
-    public Fatura? Fatura{get; set;}
+     public string MetodoPagamento { get; set; }  = string.Empty;
+
+        [JsonIgnore]
+     public Fatura? Fatura{get; set;}
     }
 }

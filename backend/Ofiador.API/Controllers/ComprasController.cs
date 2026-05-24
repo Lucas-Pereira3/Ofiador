@@ -8,7 +8,7 @@ using Ofiador.Infrastructure.Data;
 using System.Linq.Expressions;
 namespace Ofiador.API.Controllers
 {
-    [Authorize]
+     
     [ApiController]
     [Route("api/[controller]")]
     public class ComprasController : ControllerBase
@@ -23,31 +23,56 @@ namespace Ofiador.API.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpPost]
-        public IActionResult CriarCompra([FromBody] Compra compra)
+        public IActionResult CriarCompra([FromBody] CompraCreateDTOs dtos)
         {
             try
             {
+                var compra = new Compra
+                {
+                    Valor_Total = dtos.Valor_Total,
+
+                    Data_Compra= dtos.Data_Compra ?? DateTime.UtcNow,
+
+                    Parcelas = dtos.Parcelas,
+
+                    IdCliente = dtos.IdCliente,
+
+                    IdEmpresa = dtos.IdEmpresa,
+
+                    DataPrimeiroVencimento = dtos.DataPrimeiroVencimento,
+                };
+          
                 var compraCriada = _compraService.CriarCompra(compra);
 
                 var response = new CompraDTOs
+            {
+                IdCompra = compra.IdCompra,
+
+                Valor_Total = compra.Valor_Total,
+
+                Data_Compra = compra.Data_Compra,
+
+                Parcelas = compra.Parcelas,
+
+                Cliente = compra.Cliente?.Nome ?? "",
+
+                Empresa = compra.Empresa?.Nome ?? "",
+
+                ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
                 {
-                    IdCompra = compra.IdCompra,
+                    NumeroParcela = cp.NumeroParcela,
 
-                    Valor_Total = compra.Valor_Total,
+                    ValorParcela = cp.ValorParcela,
 
-                    Parcelas = compra.Parcelas,
+                    Pago = cp.Pago,
 
-                    Cliente = compra.Cliente?.Nome ?? "",
+                    Status = cp.Status.ToString(),
 
-                    Empresa = compra.Empresa?.Nome ?? "",
-
-                    ParcelasCompra = compra.CompraParcelas.Select(cp => new ParcelaDTO
-                    {
-                        NumeroParcela = cp.NumeroParcela,
-                        ValorParcela = cp.ValorParcela,
-                    }).ToList()
-                };
+                    Datapagamento = cp.DataPagamento
+                }).ToList()
+            };
                 return CreatedAtAction(nameof(BuscarCompra), new { id = compraCriada.IdCompra }, response);
             }
             catch (Exception ex)
@@ -72,6 +97,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 
@@ -118,6 +145,8 @@ namespace Ofiador.API.Controllers
                 IdCompra = compra.IdCompra,
 
                 Valor_Total = compra.Valor_Total,
+
+                Data_Compra = compra.Data_Compra,
 
                 Parcelas = compra.Parcelas,
 
@@ -169,6 +198,8 @@ namespace Ofiador.API.Controllers
                     IdCompra = c.IdCompra,
 
                     Valor_Total = c.Valor_Total,
+
+                    Data_Compra = c.Data_Compra,
 
                     Parcelas = c.Parcelas,
 

@@ -1,3 +1,4 @@
+using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Application.Services;
@@ -5,6 +6,9 @@ using Ofiador.API;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Ofiador.Infrastructure.Repository;
+using Ofiador.API.Controllers;
+using Ofiador.API.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +16,53 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Ofiador API",
+        Version = "v1",
+        Description = "API do sistema Ofiador"
+    });
+
+    //JWT no Swagger
+    options.AddSecurityDefinition("Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+
+            Type = SecuritySchemeType.Http,
+
+            Scheme = "bearer",
+
+            BearerFormat = "JWT",
+
+            In = ParameterLocation.Header,
+
+            Description = "Digite o token JWT"
+        });
+
+    options.AddSecurityRequirement(
+     new OpenApiSecurityRequirement
+     {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference =
+                    new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+            },
+
+            Array.Empty<string>()
+        }
+     });
+});
 
 // ========== Configuração do CORS ==========
 builder.Services.AddCors(options =>
@@ -24,12 +75,21 @@ builder.Services.AddCors(options =>
     });
 });
 // ================= SERVICES =================
-builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<Jwt>();
 builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<CompraService>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
+builder.Services.AddScoped<RelatorioService>();
+//================= Repositorys =================
+builder.Services.AddScoped<ClienteRepository>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<CompraRepository>();
+builder.Services.AddScoped<EmpresaRepository>();
+builder.Services.AddScoped<FaturaRepository>();
+builder.Services.AddScoped<PagamentoRepository>();
+builder.Services.AddScoped<RelatorioRepository>();
 //====================== JWT ========================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -74,6 +134,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
+
+    app.UseSwagger();
+
+    app.UseSwaggerUI();
 
 using (var scope = app.Services.CreateScope())
 {

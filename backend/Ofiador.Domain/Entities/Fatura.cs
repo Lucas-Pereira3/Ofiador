@@ -36,5 +36,8 @@ namespace Ofiador.Domain.Entities
 
         [JsonIgnore]
         public List<CompraParcela> CompraParcelas { get; set; } = new();
+
+        [JsonIgnore]
+        public ICollection<Pagamento> Pagamentos { get; set; } = new List<Pagamento>();
     }
 }

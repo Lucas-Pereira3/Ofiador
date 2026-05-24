@@ -13,12 +13,12 @@ namespace Ofiador.API.Controllers
     {
         private readonly AuthService _usuarioService;
 
-        private readonly JwtService _jwtService;
+        private readonly Jwt _jwt;
 
-        public AuthController(AuthService usuarioService, JwtService jwtService)
+        public AuthController(AuthService usuarioService, Jwt jwt)
         {
             _usuarioService = usuarioService;
-            _jwtService = jwtService;
+            _jwt = jwt;
         }
 
         [HttpPost("register")]
@@ -82,7 +82,7 @@ namespace Ofiador.API.Controllers
             if (!senhaValida)
                 return Unauthorized(new { message = "Senha inválida" });
             
-            var token = _jwtService.GerarToken(usuario);
+            var token = _jwt.GerarToken(usuario);
             return Ok(new
             {
                 usuario.IdUsuario,
@@ -118,7 +118,7 @@ namespace Ofiador.API.Controllers
                 });
             }
 
-            var novoToken= _jwtService.GerarToken(usuario);
+            var novoToken= _jwt.GerarToken(usuario);
 
             return Ok(new{
                 token = novoToken

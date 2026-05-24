@@ -256,6 +256,11 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSubmit(e);
+                  }
+                }}
                 className={`input mt-1 w-full ${
                   showEmailError || showEmailEmptyError
                     ? "border-red-500 focus:ring-red-500"
@@ -291,6 +296,11 @@ const Login = () => {
                   value={formData.senha}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSubmit(e);
+                    }
+                  }}
                   className={`input w-full pr-10 ${
                     showSenhaEmptyError || showSenhaError
                       ? "border-red-500 focus:ring-red-500"
@@ -304,7 +314,7 @@ const Login = () => {
                   onClick={handleClickShowPassword}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                  {showPassword ? <Visibility /> : <VisibilityOff />}
                 </button>
               </div>
 
@@ -359,8 +369,7 @@ const Login = () => {
 
               {!isLogin && !formData.senha && (
                 <p className="text-xs text-gray-500 mt-1">
-                  A senha deve ter: 8+ caracteres, 1 maiúscula, 1 número e 1
-                  símbolo
+                  Dica: Use uma senha forte para proteger sua conta
                 </p>
               )}
             </div>
