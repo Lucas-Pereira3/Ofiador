@@ -1,252 +1,313 @@
-# Ofiador - Sistema de Gestão
+# OFIADOR - Sistema de Controle de Vendas Fiado
 
-Sistema de gestão integrado com backend em ASP.NET Core e frontend em React/Vite.
+O OFIADOR é um sistema desenvolvido para gerenciamento de vendas realizadas no fiado, permitindo o controle de clientes, compras, parcelas, faturas, pagamentos e relatórios financeiros.
 
-##  Pré-requisitos
-
-- Docker e Docker Compose instalados
-- `.NET SDK 10.0` (opcional, se quiser rodar localmente)
-- PostgreSQL 15 (gerenciado via Docker)
-
-##  Instalação e Execução
-
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/Lucas-Pereira3/Ofiador.git
-cd Ofiador
-```
-
-### 2. Configure as variáveis de ambiente
-
-Copie o arquivo de exemplo e configure:
-
-```bash
-cp .env.example .env
-```
-
-Edite `.env` com os valores desejados 
-
-
-### 3. Subir os containers
-
-```bash
-docker-compose down -v  # Limpa volumes anteriores (primeira execução)
-docker-compose up -d
-```
-
-Aguarde ~10 segundos para o PostgreSQL iniciar.
-
-### 4. Aplicar migrations do banco de dados
-
-```bash
-docker exec -it ofiador_backend dotnet ef database update
-```
-
-**Saída esperada:**
-```
-Build started...
-Build succeeded.
-Applying migration '20260419130842_InitialCreate'.
-Done.
-```
-
-### 5. Acesse a aplicação
-
-- **Frontend**: http://localhost:3000
-- **Backend**: http://localhost:8080
-- **Health Check**: http://localhost:8080/health
+O projeto foi desenvolvido como atividade prática da disciplina de C#/.NET – Desenvolvimento de API, simulando um ambiente real de mercado com separação de responsabilidades entre Backend, Frontend, QA e Análise de Projetos.
 
 ---
 
-## Arquitetura
+# Funcionalidades Principais
 
-```
+- Cadastro de usuários
+- Autenticação JWT
+- Cadastro de empresas
+- Cadastro de clientes
+- Controle de limite de crédito
+- Registro de compras no fiado
+- Geração automática de parcelas
+- Geração de faturas mensais
+- Registro de pagamentos
+- Atualização automática de status
+- Relatórios de contas a receber
+- Consulta por período
+- Consulta de dívida por cliente
+
+---
+
+# Tecnologias Utilizadas
+
+## Backend
+- ASP.NET Core 10
+- Entity Framework Core
+- PostgreSQL
+- JWT Authentication
+- BCrypt
+- Swagger/OpenAPI
+- Docker
+
+## Frontend
+- React
+- Vite
+- JavaScript
+- CSS
+
+## Banco de Dados
+- PostgreSQL 15
+
+## Infraestrutura
+- Docker Compose
+
+## Testes
+- xUnit
+- dotnet test
+- Swagger
+- Postman
+
+---
+
+# Arquitetura do Projeto
+
+O sistema foi desenvolvido utilizando arquitetura em camadas, separando responsabilidades entre API, regras de negócio, domínio e persistência.
+
+```text
 Ofiador/
 ├── backend/
-│   ├── Ofiador.API/              # Camada de apresentação (ASP.NET Core 10.0)
-│   │   ├── Controllers/          # Endpoints da API
-│   │   ├── DTOs/                 # Data Transfer Objects
-│   │   ├── Program.cs            # Configuração da aplicação
+│
+│   ├── Ofiador.API/
+│   │   ├── Controllers/
+│   │   ├── DTOs/
+│   │   ├── Middleware/
+│   │   ├── Program.cs
 │   │   └── Dockerfile
-│   ├── Ofiador.Application/      # Serviços de aplicação e casos de uso
-│   │   └── Services/             # Implementações da lógica de aplicação
-│   ├── Ofiador.Domain/           # Entidades, agregados e regras de domínio
-│   │   └── Models/
-│   ├── Ofiador.Infrastructure/   # Persistência (EF Core), DbContext, Migrations
+│
+│   ├── Ofiador.Application/
+│   │   ├── Services/
+│   │   └── Interfaces/
+│
+│   ├── Ofiador.Domain/
+│   │   ├── Entities/
+│   │   ├── Models/
+│   │   └── Rules/
+│
+│   ├── Ofiador.Infrastructure/
 │   │   ├── Data/
+│   │   ├── Repositories/
 │   │   └── Migrations/
-│   └── Dockerfile
-├── frontend/                      # React + Vite
+│
+│   └── Tests/
+│       ├── UnitTests/
+│       └── IntegrationTests/
+│
+├── frontend/
 │   ├── src/
-│   ├── public/
-│   └── Dockerfile
-├── database/
-│   └── init.sql                  # Scripts SQL (opcional)
-├── docker-compose.yml            # Orquestração de containers
-├── .env                          # Variáveis de ambiente
-└── README.md                     # Este arquivo
-```
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   └── assets/
+│
+├── docker-compose.yml
+├── .env
+└── README.md
+Banco de Dados
 
----
+O sistema utiliza PostgreSQL como banco de dados relacional.
 
-## Stack Tecnológico
+Principais Tabelas
+Usuarios
+Empresas
+Clientes
+Compras
+Faturas
+Pagamentos
+compra_parcela
+Estrutura das Entidades
+Usuários
 
-### Backend
-- **Framework**: ASP.NET Core 10.0
-- **ORM**: Entity Framework Core 10.0.6
-- **Banco**: PostgreSQL 15
-- **Autenticação**: JWT (configurado)
-- **Criptografia**: BCrypt.Net-Next 4.1.0
+Responsável pela autenticação e acesso ao sistema.
 
-### Frontend
-- **Framework**: React/Vite
-- **Porta**: 3000
-- **Runtime**: Node.js
+Empresas
 
-### Infraestrutura
-- **Orquestração**: Docker Compose
-- **Rede**: Bridge network (ofiador_network)
-- **Persistência**: Volume nomeado (postgres_data)
+Representa a empresa responsável pelo gerenciamento das vendas fiado.
 
----
+Clientes
 
-## Principais Endpoints
+Armazena os dados dos clientes e o limite de crédito.
 
-### Health Check
-```
-GET /health
-```
+Compras
 
-### Autenticação
-```
-POST /api/auth/register
-POST /api/auth/login
-```
+Registra as compras realizadas pelos clientes.
 
-### WeatherForecast (exemplo)
-```
-GET /weatherforecast
-```
+Faturas
 
----
+Agrupa compras e controla valores pendentes.
 
-## Operações Comuns
+Pagamentos
 
-### Parar containers
-```bash
-docker-compose stop
-```
+Controla pagamentos realizados nas faturas.
 
-### Reiniciar containers
-```bash
-docker-compose restart
-```
+Compra_Parcela
 
-### Ver logs do backend
-```bash
-docker-compose logs backend -f
-```
+Controla parcelamento, vencimento e status de pagamento das parcelas.
 
-### Ver logs do PostgreSQL
-```bash
-docker-compose logs postgres -f
-```
+Pré-requisitos
 
-### Conectar ao PostgreSQL
-```bash
-docker exec -it ofiador_db psql -U admin -d ofiador
-```
+Antes de iniciar o projeto, é necessário possuir instalado:
 
-### Listar tabelas do banco
-```bash
-docker exec -it ofiador_db psql -U admin -d ofiador -c "\dt"
-```
+Docker
+Docker Compose
+.NET SDK 10 (opcional)
+Node.js
+PostgreSQL (caso não utilize Docker)
+Instalação e Execução
+1. Clonar o repositório
+git clone https://github.com/Lucas-Pereira3/Ofiador.git
+cd Ofiador
+2. Configurar variáveis de ambiente
 
-### Remover tudo (containers + volumes)
-```bash
-docker-compose down -v
-```
+Copie o arquivo:
 
----
+cp .env.example .env
 
-##  Adicionar Novas Migrations
+Configure as variáveis conforme necessário.
 
-Quando criar novos modelos/tabelas:
-
-```bash
-# 1. No seu PC (não no container)
-cd backend/Ofiador.API
-dotnet ef migrations add NomeDaMigracao
-
-# 2. Dentro do container
-docker exec -it ofiador_backend dotnet ef database update
-```
-
----
-
-## Segurança
-
-- Senhas armazenadas com BCrypt (hash)
-- CORS configurado
-- JWT para autenticação
-- Variáveis sensíveis em `.env` (não em `.csproj`)
-
----
-
-##  Estrutura do Frontend
-
-```
-frontend/
-├── src/
-│   ├── assets/      # Imagens, fonts, CSS
-│   ├── components/  # Componentes reutilizáveis
-│   ├── pages/       # Páginas da aplicação
-│   ├── services/    # APIs e chamadas HTTP
-│   └── main.jsx     # Entrada da aplicação
-├── .env             # Variáveis de ambiente
-├── package.json
-└── vite.config.js
-```
-
----
-
-##  Troubleshooting
-
-### Erro: "Este host não é conhecido"
-**Solução**: Certifique-se de que está usando `Host=postgres` no `.env` (não `localhost`).
-
-### Erro: ".NET SDK não encontrado" ao rodar migrations
-**Solução**: Use `docker exec -it ofiador_backend dotnet ef database update` (dentro do container).
-
-### Porta 5432 já em uso
-**Solução**: Altere a porta em `.env`:
-```env
-DB_PORT=5433
-```
-E em `docker-compose.yml`:
-```yaml
-ports:
-  - "${DB_PORT}:5432"
-```
-
-### Container não inicia
-**Solução**: Limpe volumes e recrie:
-```bash
+3. Subir containers Docker
 docker-compose down -v
 docker-compose up -d
-```
+4. Aplicar migrations
+docker exec -it ofiador_backend dotnet ef database update
+5. Executar aplicação
+Frontend
+http://localhost:3000
+Backend
+http://localhost:8080
+Swagger
+http://localhost:8080/swagger
+Autenticação JWT
 
+O sistema utiliza autenticação JWT para proteção das rotas privadas.
 
+Endpoints de autenticação
+POST /api/auth/register
+POST /api/auth/login
 
-## Licença
+Após autenticação, o token JWT deve ser enviado no header:
 
-Este projeto é licenciado sob a MIT License.
+Authorization: Bearer TOKEN
+Principais Endpoints da API
+Usuários
+POST /api/auth/register
+POST /api/auth/login
+Empresas
+GET /api/empresas
+GET /api/empresas/{id}
+POST /api/empresas
+PUT /api/empresas/{id}
+DELETE /api/empresas/{id}
+Clientes
+GET /api/clientes
+GET /api/clientes/{id}
+POST /api/clientes
+PUT /api/clientes/{id}
+DELETE /api/clientes/{id}
+Compras
+GET /api/compras
+GET /api/compras/{clienteId}
+POST /api/compras
+Faturas
+POST /api/faturas
+GET /api/faturas/{clienteId}
+PATCH /api/faturas/{id}/pagar
+Relatórios
+GET /api/relatorios/contas-a-receber
+GET /api/relatorios/contas-a-receber?dataInicio=&dataFim=
+Regras de Negócio
+RN01
 
----
+Cada cliente pertence a uma empresa.
 
-## Suporte
+RN02
 
-Para dúvidas ou problemas, abra uma issue no repositório.
+Toda compra deve estar vinculada a um cliente.
 
-**Última atualização**: 2025
+RN03
+
+O sistema deve validar limite de crédito do cliente antes da compra.
+
+RN04
+
+Compras podem ser parceladas.
+
+RN05
+
+As parcelas devem possuir vencimento individual.
+
+RN06
+
+Pagamentos atualizam automaticamente os valores pendentes.
+
+RN07
+
+Toda fatura gerada inicia com status "Pendente".
+
+RN08
+
+Faturas podem ser atualizadas para "Paga".
+
+RN09
+
+O sistema deve controlar quantidade total e parcelas pagas.
+
+RN10
+
+Consultas financeiras devem permitir filtro por período.
+
+Processo de Testes
+
+O projeto possui plano de testes estruturado contendo:
+
+Testes funcionais
+Testes de integração
+Testes unitários
+Testes de autenticação JWT
+Testes de validação
+Testes de relatórios
+Executar testes
+dotnet test
+Fluxo do Sistema
+Frontend → API → Services → Repositories → PostgreSQL
+Segurança
+Senhas criptografadas com BCrypt
+Autenticação JWT
+Rotas protegidas
+Variáveis sensíveis em .env
+Versionamento
+
+O projeto utiliza GitHub para versionamento e controle de Pull Requests.
+
+Repositório:
+
+https://github.com/Lucas-Pereira3/Ofiador
+Equipe do Projeto
+Integrante	Função
+Matheus Sossai	Analista de Projetos
+Pedro Henrique	Backend
+João Victor	Backend
+Lucas Pereira	Frontend
+Vitória	Frontend
+Charles	QA
+Possíveis Melhorias Futuras
+Dashboard financeiro
+Notificações automáticas
+Controle de inadimplência
+Exportação PDF/Excel
+Histórico detalhado de pagamentos
+Relatórios gráficos
+Controle de permissões
+Troubleshooting
+Docker não inicia
+docker-compose down -v
+docker-compose up -d
+Erro de migration
+docker exec -it ofiador_backend dotnet ef database update
+Porta PostgreSQL ocupada
+
+Alterar no .env:
+
+DB_PORT=5433
+Licença
+
+Projeto acadêmico desenvolvido para fins educacionais.
+
+Última atualização
+
+2026
