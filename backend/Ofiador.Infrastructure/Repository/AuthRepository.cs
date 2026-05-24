@@ -3,7 +3,7 @@ using Ofiador.Infrastructure.Data;
 
 namespace Ofiador.Infrastructure.Repository
 {
-    public class AuthRepository
+    public class AuthRepository : IAuthRepository
     {
         private readonly ApplicationDbContext _context;
 

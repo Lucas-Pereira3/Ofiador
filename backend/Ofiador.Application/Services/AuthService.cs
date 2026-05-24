@@ -8,9 +8,9 @@ namespace Ofiador.Application.Services
 {
     public class AuthService
     {
-        private readonly AuthRepository _authRepository;
+        private readonly IAuthRepository _authRepository;
 
-        public AuthService(AuthRepository authRepository)
+        public AuthService(IAuthRepository authRepository)
         {
             _authRepository = authRepository;
         }
@@ -40,7 +40,7 @@ namespace Ofiador.Application.Services
             // VALIDAÇÃO: Verificar se o email já existe
             if (string.IsNullOrWhiteSpace(nome) || string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(senha))
             {
-                return(false,"todos os campos sâo obrigatórios",null);
+                return(false,"Todos os campos são obrigatórios",null);
             }
             if (!EmailValido(login))
                  return (false,"Email invalido", null);

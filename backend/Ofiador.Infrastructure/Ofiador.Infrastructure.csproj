@@ -15,8 +15,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
   </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Ofiador.Domain\Ofiador.Domain.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ofiador.Domain\Ofiador.Domain.csproj" />
+  </ItemGroup>
 
 </Project>

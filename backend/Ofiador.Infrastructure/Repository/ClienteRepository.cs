@@ -70,11 +70,18 @@ namespace Ofiador.Infrastructure.Repository
             _context.SaveChanges();
         }
         public async Task<Cliente?> GetClienteComFaturas(int id)
-    {
-    return await _context.Clientes
-        .Include(c => c.Faturas)
+        {
+        return await _context.Clientes
+            .Include(c => c.Faturas)
             .ThenInclude(f => f.CompraParcelas)
-        .FirstOrDefaultAsync(c => c.IdCliente == id);
-    }
+            .FirstOrDefaultAsync(c => c.IdCliente == id);
+        }
+
+        public async Task<decimal> GetDivida(int idCliente)
+        {
+            return await _context.CompraParcelas
+                .Where(p => p.Fatura.IdCliente == idCliente && !p.Pago)
+                .SumAsync(p => (decimal?)p.ValorParcela) ?? 0;
+        }
     }
 }
