@@ -1,5 +1,6 @@
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ofiador.Infrastructure.Repository
 {
@@ -68,5 +69,12 @@ namespace Ofiador.Infrastructure.Repository
 
             _context.SaveChanges();
         }
+        public async Task<Cliente?> GetClienteComFaturas(int id)
+    {
+    return await _context.Clientes
+        .Include(c => c.Faturas)
+            .ThenInclude(f => f.CompraParcelas)
+        .FirstOrDefaultAsync(c => c.IdCliente == id);
+    }
     }
 }

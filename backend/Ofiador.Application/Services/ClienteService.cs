@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Ofiador.Infrastructure.Repository;
 using Ofiador.Domain.Entities;
+using Ofiador.Application.DTOs;
 
 namespace Ofiador.Application.Services
 {
@@ -315,5 +316,28 @@ namespace Ofiador.Application.Services
 
             return (true,"Cliente excluido com sucesso");
         }
+        public async Task<DividaClienteDto> GetDivida(int id)
+{
+    var cliente = await _repository.GetClienteComFaturas(id);
+
+    if (cliente == null)
+    {
+        throw new Exception("Cliente não encontrado");
+    }
+
+    var parcelas = cliente.Faturas
+        .SelectMany(f => f.CompraParcelas);
+
+    var total = parcelas.Sum(p => p.ValorParcela);
+
+    var pago = parcelas
+        .Where(p => p.Pago)
+        .Sum(p => p.ValorParcela);
+
+    return new DividaClienteDto
+    {
+        TotalDivida = total - pago
+    };
+}
     }
 }

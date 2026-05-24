@@ -23,5 +23,7 @@ namespace Ofiador.Domain.Entities
         public int IdEmpresa { get; set; }
 
         public Empresa? Empresa { get; set; }
+
+        public ICollection<Fatura> Faturas { get; set; } = new List<Fatura>();
     }
 }
