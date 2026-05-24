@@ -77,7 +77,23 @@ namespace Ofiador.API.Controllers
 
             return Ok(clientes);
         }
+        [HttpGet("{id}/divida")]
+        public async Task<IActionResult> GetDivida(int id)
+        {
+            try
+            {
+                var divida = await _clienteService.GetDivida(id);
 
+                return Ok(divida);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new
+                {
+                    erro = ex.Message
+                });
+            }
+        }
         [HttpGet("{id}")]
         public IActionResult BuscarClientes(int id)
         {
@@ -97,6 +113,10 @@ namespace Ofiador.API.Controllers
                     Empresa = c.Empresa != null
                             ? c.Empresa.Nome
                             : string.Empty,
+                    Divida = c.Faturas
+                    .SelectMany(f => f.CompraParcelas)
+                    .Where(p => !p.Pago)
+                    .Sum(p => (decimal?)p.ValorParcela) ?? 0
                 }).FirstOrDefault();
 
             if (cliente == null)
