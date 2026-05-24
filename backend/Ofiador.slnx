@@ -3,4 +3,5 @@
   <Project Path="Ofiador.Application/Ofiador.Application.csproj" Id="09bc3053-80ec-4e9f-bf56-cce4e8a44dd0" />
   <Project Path="Ofiador.Domain/Ofiador.Domain.csproj" Id="75e31eb3-bd36-482b-a2fb-1a41a9b0181b" />
   <Project Path="Ofiador.Infrastructure/Ofiador.Infrastructure.csproj" Id="3e181cd1-07ce-49d0-8267-c8ca193456d7" />
+  <Project Path="Ofiador.Test/Ofiador.Test.csproj" Id="e7f925ca-daba-4084-bfc5-ab3ca7a90173" />
 </Solution>

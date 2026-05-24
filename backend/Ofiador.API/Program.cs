@@ -82,6 +82,9 @@ builder.Services.AddScoped<CompraService>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
 builder.Services.AddScoped<RelatorioService>();
+//================= Interfaces =================
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IJwt, Jwt>();
 //================= Repositorys =================
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<AuthRepository>();

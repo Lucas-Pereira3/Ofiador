@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
+using Ofiador.Infrastructure.Repository;
 
 
 namespace Ofiador.API.Controllers
@@ -13,9 +14,9 @@ namespace Ofiador.API.Controllers
     {
         private readonly AuthService _usuarioService;
 
-        private readonly Jwt _jwt;
+        private readonly IJwt _jwt;
 
-        public AuthController(AuthService usuarioService, Jwt jwt)
+        public AuthController(AuthService usuarioService, IJwt jwt)
         {
             _usuarioService = usuarioService;
             _jwt = jwt;

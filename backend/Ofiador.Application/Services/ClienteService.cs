@@ -318,25 +318,19 @@ namespace Ofiador.Application.Services
         }
         public async Task<DividaClienteDto> GetDivida(int id)
 {
-    var cliente = await _repository.GetClienteComFaturas(id);
+    var cliente = _repository.BuscarPorId(id);
 
     if (cliente == null)
     {
         throw new Exception("Cliente não encontrado");
     }
 
-    var parcelas = cliente.Faturas
-        .SelectMany(f => f.CompraParcelas);
+    var divida = await _repository.GetDivida(id); 
 
-    var total = parcelas.Sum(p => p.ValorParcela);
-
-    var pago = parcelas
-        .Where(p => p.Pago)
-        .Sum(p => p.ValorParcela);
 
     return new DividaClienteDto
     {
-        TotalDivida = total - pago
+        TotalDivida = divida
     };
 }
     }
