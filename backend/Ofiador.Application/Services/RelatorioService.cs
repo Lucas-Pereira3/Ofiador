@@ -14,7 +14,14 @@ namespace Ofiador.Application.Services
 
         public async Task<List<ContaReceberRelatorioDto>> GetContasReceber(DateTime? dataInicial, DateTime? dataFinal)
         {
-           var faturas = await _repository
+           if (dataInicial.HasValue &&
+          dataFinal.HasValue &&
+          dataInicial > dataFinal)
+        {
+        throw new Exception(
+        "Data inicial não pode ser maior que a data final");
+            }  
+            var faturas = await _repository
                 .GetContasReceber(dataInicial, dataFinal);
 
             var relatorio = faturas.GroupBy(f=> new

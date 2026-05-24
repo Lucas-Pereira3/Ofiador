@@ -77,7 +77,23 @@ namespace Ofiador.API.Controllers
 
             return Ok(clientes);
         }
+        [HttpGet("{id}/divida")]
+            public async Task<IActionResult> GetDivida(int id)
+       {
+    try
+    {
+        var divida = await _clienteService.GetDivida(id);
 
+        return Ok(divida);
+    }
+    catch (Exception ex)
+    {
+        return NotFound(new
+        {
+            erro = ex.Message
+        });
+    }
+      }
         [HttpGet("{id}")]
         public IActionResult BuscarClientes(int id)
         {
