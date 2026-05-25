@@ -34,6 +34,8 @@ const Clientes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
   const [empresaInputValue, setEmpresaInputValue] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clienteToDelete, setClienteToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -268,7 +270,13 @@ const Clientes = () => {
       await loadClientes();
     } catch (error) {
       console.error("Erro ao salvar cliente:", error);
-      toast.error(error.response?.data?.message || "Erro ao salvar cliente");
+
+      const mensagem =
+        error.response?.data?.erro ||
+        error.response?.data?.message ||
+        "Erro ao salvar cliente";
+
+      toast.error(mensagem);
     } finally {
       setIsSubmitting(false);
     }
@@ -289,15 +297,23 @@ const Clientes = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id, nome) => {
-    if (window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`)) {
-      try {
-        await api.delete(`/cliente/${id}`);
-        toast.success("Cliente excluído com sucesso!");
-        await loadClientes();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Erro ao excluir cliente");
-      }
+  const handleDelete = (cliente) => {
+    setClienteToDelete(cliente);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/cliente/${clienteToDelete.idCliente}`);
+
+      toast.success("Cliente excluído com sucesso!");
+
+      await loadClientes();
+
+      setShowDeleteModal(false);
+      setClienteToDelete(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erro ao excluir cliente");
     }
   };
 
@@ -408,6 +424,7 @@ const Clientes = () => {
             setShowModal(true);
           }}
           icon={PlusIcon}
+          className="self-start sm:self-auto w-auto"
         >
           Novo Cliente
         </Button>
@@ -512,9 +529,7 @@ const Clientes = () => {
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() =>
-                            handleDelete(cliente.idCliente, cliente.nome)
-                          }
+                          onClick={() => handleDelete(cliente)}
                           className="p-1.5 text-gray-400 hover:text-danger transition-colors"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -648,6 +663,7 @@ const Clientes = () => {
             onChange={handleChange}
             placeholder="(00) 00000-0000"
             maxLength={15}
+            error={formErrors.telefone}
           />
           <Input
             label="Email"
@@ -656,6 +672,7 @@ const Clientes = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="cliente@email.com"
+            error={formErrors.email}
           />
           <Input
             label="Endereço"
@@ -663,6 +680,7 @@ const Clientes = () => {
             value={formData.endereco}
             onChange={handleChange}
             placeholder="Digite o endereço completo"
+            error={formErrors.endereco}
           />
           <Input
             label="Limite de Crédito"
@@ -688,45 +706,73 @@ const Clientes = () => {
               placeholder="Pesquisar empresa..."
               noOptionsMessage={() => "Nenhuma empresa encontrada"}
               isClearable
-              menuPlacement="auto"
+              menuPlacement="top"
               className={formErrors.idEmpresa ? "border-danger" : ""}
               styles={{
                 control: (provided, state) => ({
                   ...provided,
-                  minHeight: "27px",
-                  height: "27px",
+                  minHeight: "37px",
+                  height: "37px",
                   borderRadius: "0.5rem",
                   borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
                   boxShadow: state.isFocused
                     ? "0 0 0 2px rgba(26,43,76,0.15)"
                     : "none",
-                  fontSize: "14px",
+                  fontSize: "12px", // diminui geral
                 }),
 
                 valueContainer: (provided) => ({
                   ...provided,
-                  height: "27px",
+                  height: "37px",
                   padding: "0 12px",
-                }),
-
-                indicatorsContainer: (provided) => ({
-                  ...provided,
-                  height: "27px",
-                }),
-
-                placeholder: (provided) => ({
-                  ...provided,
-                  fontSize: "9px",
-                  color: "#9ca3af",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
                 }),
 
                 singleValue: (provided) => ({
                   ...provided,
-                  fontSize: "9px",
+                  fontSize: "11px", // valor selecionado
+                  maxWidth: "90%",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }),
+
+                placeholder: (provided) => ({
+                  ...provided,
+                  fontSize: "12px", // placeholder
+                  color: "#9ca3af",
+                }),
+
+                input: (provided) => ({
+                  ...provided,
+                  fontSize: "11px", // texto digitado
+                  margin: "0px",
+                  padding: "0px",
+                }),
+
+                option: (provided) => ({
+                  ...provided,
+                  fontSize: "11px", // opções da lista
+                }),
+
+                menu: (provided) => ({
+                  ...provided,
+                  fontSize: "11px",
+                }),
+
+                indicatorsContainer: (provided) => ({
+                  ...provided,
+                  height: "37px",
                 }),
 
                 indicatorSeparator: () => ({
                   display: "none",
+                }),
+
+                menuPortal: (base) => ({
+                  ...base,
+                  zIndex: 9999,
                 }),
               }}
             />
@@ -735,6 +781,28 @@ const Clientes = () => {
             )}
           </div>
         </form>
+      </Modal>
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar exclusão"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+
+            <Button variant="danger" onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Tem certeza que deseja excluir o cliente{" "}
+          <strong>{clienteToDelete?.nome}</strong>?
+        </p>
       </Modal>
     </div>
   );

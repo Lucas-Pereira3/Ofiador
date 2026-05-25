@@ -28,6 +28,8 @@ const Empresas = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [empresaToDelete, setEmpresaToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -259,15 +261,23 @@ const Empresas = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id, nome) => {
-    if (window.confirm(`Tem certeza que deseja excluir a empresa "${nome}"?`)) {
-      try {
-        await api.delete(`/empresa/${id}`);
-        toast.success("Empresa excluída com sucesso!");
-        await loadEmpresas();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Erro ao excluir empresa");
-      }
+  const handleDelete = (empresa) => {
+    setEmpresaToDelete(empresa);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/empresa/${empresaToDelete.idEmpresa}`);
+
+      toast.success("Empresa excluída com sucesso!");
+
+      await loadEmpresas();
+
+      setShowDeleteModal(false);
+      setEmpresaToDelete(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erro ao excluir empresa");
     }
   };
 
@@ -356,6 +366,7 @@ const Empresas = () => {
             setShowModal(true);
           }}
           icon={PlusIcon}
+          className="self-start sm:self-auto w-auto"
         >
           Nova Empresa
         </Button>
@@ -431,9 +442,7 @@ const Empresas = () => {
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() =>
-                          handleDelete(empresa.idEmpresa, empresa.nome)
-                        }
+                        onClick={() => handleDelete(empresa)}
                         className="p-1.5 text-gray-400 hover:text-danger transition-colors"
                         title="Excluir"
                       >
@@ -551,6 +560,28 @@ const Empresas = () => {
             placeholder="contato@empresa.com"
           />
         </form>
+      </Modal>
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar exclusão"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+
+            <Button variant="danger" onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Tem certeza que deseja excluir a empresa{" "}
+          <strong>{empresaToDelete?.nome}</strong>?
+        </p>
       </Modal>
     </div>
   );

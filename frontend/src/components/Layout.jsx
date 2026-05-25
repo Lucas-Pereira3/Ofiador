@@ -366,7 +366,7 @@ const Layout = () => {
       <main className="lg:pl-72">
         <div className="min-h-screen">
           {/* Page Content */}
-          <div className="p-6">
+          <div className="p-4 pt-20 lg:p-6 lg:pt-6">
             <Outlet />
           </div>
         </div>

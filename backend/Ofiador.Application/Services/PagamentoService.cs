@@ -132,8 +132,18 @@ namespace Ofiador.Application.Services
                 throw new Exception("Fatura já foi pagga");
             }
 
-            //pagar parcelas
-            foreach(var parcela in fatura.CompraParcelas.Where(p=> !p.Pago))
+    
+            // pegar somente parcelas pendentes
+            var parcelasPendentes = fatura.CompraParcelas
+                .Where(p => !p.Pago)
+                .ToList();
+
+            // calcular somente o valor restante
+            var valorRestante = parcelasPendentes
+                .Sum(p => p.ValorParcela);
+
+            // marcar parcelas como pagas
+            foreach(var parcela in parcelasPendentes)
             {
                 parcela.Pago = true;
 
@@ -146,11 +156,12 @@ namespace Ofiador.Application.Services
 
             fatura.Status = "PAGO";
 
-            var pagamento = new Pagamento 
-            { 
+            // criar pagamento apenas do valor restante
+            var pagamento = new Pagamento
+            {
                 Data_Pagamento = DateTime.UtcNow,
 
-                ValorPago = fatura.Total,
+                ValorPago = valorRestante,
 
                 MetodoPagamento = metodoPagamento,
 

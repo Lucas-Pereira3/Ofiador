@@ -172,7 +172,9 @@ const Dashboard = () => {
       });
 
       setUltimasCompras(data.ultimasCompras);
-      setMaioresDividas(data.maioresDividas);
+      setMaioresDividas(
+        data.maioresDividas.filter((cliente) => cliente.divida > 0)
+      );
       setDadosGraficoBarras({
         labels: data.grafico.labels,
         vendasFiado: data.grafico.vendasFiado,
