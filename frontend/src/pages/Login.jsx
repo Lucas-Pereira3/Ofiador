@@ -376,7 +376,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="btn-primary w-full"
+              className="btn-primary w-full py-3 px-4 text-base rounded-lg"
               disabled={
                 (!isLogin && !isNomeValid && formData.nome !== "") ||
                 (!isLogin && !isPasswordValid && formData.senha !== "")
