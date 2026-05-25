@@ -54,13 +54,15 @@ namespace Ofiador.Infrastructure.Repository
         //Documento Atualizado Existente
         public bool DocumentoAtualizadoExiste(string documento, int id)
         {
-            return _context.Clientes.Any(c => c.Cpf_Cnpj == documento && c.IdCliente == id);
+            return _context.Clientes
+                .Any(c => c.Cpf_Cnpj == documento && c.IdCliente != id);
         }
         
         //Email Atualizado Existente
         public bool EmailAtualizadoExiste(string email, int id)
         {
-            return _context.Clientes.Any(c => c.Email == email && c.IdCliente == id);
+            return _context.Clientes
+                .Any(c => c.Email == email && c.IdCliente != id);
         }
         //Remover cliente
         public void Remover(Cliente cliente)

@@ -5,41 +5,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== NOVAS CONFIGURAÇÕES DE ESCALA ===== */
+/* Configuração de escala */
 @layer base {
-  /* Reduzir a escala base do navegador  */
   html {
-    font-size: 81.25%; /* 13px ao invés de 16px - equivalente a 81.25% */
+    font-size: 100%;
   }
 
-  /* Para telas muito grandes (acima de 1920px) */
-  @media (min-width: 1920px) {
-    html {
-      font-size: 75%; /* 12px - ainda menor para telas grandes */
-    }
-  }
-
-  /* Para telas médias (1440px - 1919px) */
-  @media (min-width: 1440px) and (max-width: 1919px) {
-    html {
-      font-size: 81.25%; /* 13px */
-    }
-  }
-
-  /* Para telas pequenas (abaixo de 1280px) */
-  @media (max-width: 1279px) {
-    html {
-      font-size: 75%; /* 12px */
-    }
-  }
-
-  /* Remove o zoom padrão que alguns navegadores aplicam */
   body {
     zoom: 1;
-    -moz-transform: none;
   }
 }
-
 @layer base {
   :root {
     /* Cores principais */

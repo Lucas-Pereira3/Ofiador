@@ -692,36 +692,59 @@ const Pagamentos = () => {
                 styles={{
                   control: (provided, state) => ({
                     ...provided,
-                    minHeight: "27px",
-                    height: "27px",
+                    minHeight: "37px",
+                    height: "37px",
                     borderRadius: "0.5rem",
                     borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
                     boxShadow: state.isFocused
                       ? "0 0 0 2px rgba(26,43,76,0.15)"
                       : "none",
-                    fontSize: "14px",
+                    fontSize: "12px", // diminui geral
                   }),
 
                   valueContainer: (provided) => ({
                     ...provided,
-                    height: "27px",
+                    height: "37px",
                     padding: "0 12px",
-                  }),
-
-                  indicatorsContainer: (provided) => ({
-                    ...provided,
-                    height: "27px",
-                  }),
-
-                  placeholder: (provided) => ({
-                    ...provided,
-                    fontSize: "9px",
-                    color: "#9ca3af",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }),
 
                   singleValue: (provided) => ({
                     ...provided,
-                    fontSize: "9px",
+                    fontSize: "11px", // valor selecionado
+                    maxWidth: "90%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }),
+
+                  placeholder: (provided) => ({
+                    ...provided,
+                    fontSize: "12px", // placeholder
+                    color: "#9ca3af",
+                  }),
+
+                  input: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // texto digitado
+                    margin: "0px",
+                    padding: "0px",
+                  }),
+
+                  option: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // opções da lista
+                  }),
+
+                  menu: (provided) => ({
+                    ...provided,
+                    fontSize: "11px",
+                  }),
+
+                  indicatorsContainer: (provided) => ({
+                    ...provided,
+                    height: "37px",
                   }),
 
                   indicatorSeparator: () => ({
@@ -729,11 +752,6 @@ const Pagamentos = () => {
                   }),
 
                   menuPortal: (base) => ({
-                    ...base,
-                    zIndex: 9999,
-                  }),
-
-                  menu: (base) => ({
                     ...base,
                     zIndex: 9999,
                   }),
@@ -780,36 +798,59 @@ const Pagamentos = () => {
                 styles={{
                   control: (provided, state) => ({
                     ...provided,
-                    minHeight: "27px",
-                    height: "27px",
+                    minHeight: "37px",
+                    height: "37px",
                     borderRadius: "0.5rem",
                     borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
                     boxShadow: state.isFocused
                       ? "0 0 0 2px rgba(26,43,76,0.15)"
                       : "none",
-                    fontSize: "14px",
+                    fontSize: "12px", // diminui geral
                   }),
 
                   valueContainer: (provided) => ({
                     ...provided,
-                    height: "27px",
+                    height: "37px",
                     padding: "0 12px",
-                  }),
-
-                  indicatorsContainer: (provided) => ({
-                    ...provided,
-                    height: "27px",
-                  }),
-
-                  placeholder: (provided) => ({
-                    ...provided,
-                    fontSize: "9px",
-                    color: "#9ca3af",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }),
 
                   singleValue: (provided) => ({
                     ...provided,
-                    fontSize: "9px",
+                    fontSize: "11px", // valor selecionado
+                    maxWidth: "90%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }),
+
+                  placeholder: (provided) => ({
+                    ...provided,
+                    fontSize: "12px", // placeholder
+                    color: "#9ca3af",
+                  }),
+
+                  input: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // texto digitado
+                    margin: "0px",
+                    padding: "0px",
+                  }),
+
+                  option: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // opções da lista
+                  }),
+
+                  menu: (provided) => ({
+                    ...provided,
+                    fontSize: "11px",
+                  }),
+
+                  indicatorsContainer: (provided) => ({
+                    ...provided,
+                    height: "37px",
                   }),
 
                   indicatorSeparator: () => ({
@@ -817,11 +858,6 @@ const Pagamentos = () => {
                   }),
 
                   menuPortal: (base) => ({
-                    ...base,
-                    zIndex: 9999,
-                  }),
-
-                  menu: (base) => ({
                     ...base,
                     zIndex: 9999,
                   }),
@@ -845,36 +881,59 @@ const Pagamentos = () => {
                 styles={{
                   control: (provided, state) => ({
                     ...provided,
-                    minHeight: "27px",
-                    height: "27px",
+                    minHeight: "37px",
+                    height: "37px",
                     borderRadius: "0.5rem",
                     borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
                     boxShadow: state.isFocused
                       ? "0 0 0 2px rgba(26,43,76,0.15)"
                       : "none",
-                    fontSize: "14px",
+                    fontSize: "12px", // diminui geral
                   }),
 
                   valueContainer: (provided) => ({
                     ...provided,
-                    height: "27px",
+                    height: "37px",
                     padding: "0 12px",
-                  }),
-
-                  indicatorsContainer: (provided) => ({
-                    ...provided,
-                    height: "27px",
-                  }),
-
-                  placeholder: (provided) => ({
-                    ...provided,
-                    fontSize: "9px",
-                    color: "#9ca3af",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }),
 
                   singleValue: (provided) => ({
                     ...provided,
-                    fontSize: "9px",
+                    fontSize: "11px", // valor selecionado
+                    maxWidth: "90%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }),
+
+                  placeholder: (provided) => ({
+                    ...provided,
+                    fontSize: "12px", // placeholder
+                    color: "#9ca3af",
+                  }),
+
+                  input: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // texto digitado
+                    margin: "0px",
+                    padding: "0px",
+                  }),
+
+                  option: (provided) => ({
+                    ...provided,
+                    fontSize: "11px", // opções da lista
+                  }),
+
+                  menu: (provided) => ({
+                    ...provided,
+                    fontSize: "11px",
+                  }),
+
+                  indicatorsContainer: (provided) => ({
+                    ...provided,
+                    height: "37px",
                   }),
 
                   indicatorSeparator: () => ({
@@ -882,11 +941,6 @@ const Pagamentos = () => {
                   }),
 
                   menuPortal: (base) => ({
-                    ...base,
-                    zIndex: 9999,
-                  }),
-
-                  menu: (base) => ({
                     ...base,
                     zIndex: 9999,
                   }),
