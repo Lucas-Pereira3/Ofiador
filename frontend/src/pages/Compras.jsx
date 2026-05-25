@@ -4,12 +4,19 @@ import toast from "react-hot-toast";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  XMarkIcon,
   UserPlusIcon,
   ExclamationTriangleIcon,
-  DocumentTextIcon,
+  ShoppingCartIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
+  ReceiptPercentIcon,
 } from "@heroicons/react/24/outline";
 import Select from "react-select";
+import Button from "../components/ui/Button";
+import Card, { CardBody, CardHeader } from "../components/ui/Card";
+import Modal from "../components/ui/Modal";
+import Input from "../components/ui/Input";
+import Badge from "../components/ui/Badge";
 
 // Modal de cadastro rápido de cliente
 const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
@@ -24,6 +31,7 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [empresaInputValue, setEmpresaInputValue] = useState("");
 
   const formatCPF = (value) => {
     const clean = value.replace(/[^\d]/g, "");
@@ -82,8 +90,18 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
     } else {
       setFormData({ ...formData, [name]: value });
     }
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: null });
+    if (errors[name]) setErrors({ ...errors, [name]: null });
+  };
+
+  // Handler para o Select de empresa
+  const handleEmpresaChange = (selectedOption) => {
+    if (selectedOption) {
+      setFormData({ ...formData, idEmpresa: selectedOption.value });
+      if (errors.idEmpresa) {
+        setErrors({ ...errors, idEmpresa: null });
+      }
+    } else {
+      setFormData({ ...formData, idEmpresa: "" });
     }
   };
 
@@ -121,171 +139,175 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
       };
 
       const response = await api.post("/cliente", clienteData);
-
       toast.success("Cliente cadastrado com sucesso!");
       onClienteCriado(response.data);
       onClose();
+      // Resetar formulário
+      setFormData({
+        nome: "",
+        cpf_Cnpj: "",
+        telefone: "",
+        email: "",
+        endereco: "",
+        limite: "",
+        idEmpresa: "",
+      });
+      setEmpresaInputValue("");
     } catch (error) {
-      console.error("Erro ao registrar cliente:", error);
       toast.error(error.response?.data?.message || "Erro ao cadastrar cliente");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  // Opções do Select de empresas
+  const empresaOptions = empresas
+    .filter((empresa) => {
+      if (!empresaInputValue) return true;
+      return empresa.nome
+        .toLowerCase()
+        .includes(empresaInputValue.toLowerCase());
+    })
+    .slice(0, 6) // Limita a 6 empresas
+    .map((empresa) => ({
+      value: empresa.idEmpresa,
+      label: empresa.nome,
+    }));
+
+  // Valor selecionado
+  const selectedEmpresa = empresaOptions.find(
+    (opt) => opt.value === parseInt(formData.idEmpresa)
+  );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold" style={{ color: "#1A2B4C" }}>
-            Novo Cliente
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Novo Cliente"
+      size="md"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} isLoading={loading}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Nome"
+          name="nome"
+          value={formData.nome}
+          onChange={handleChange}
+          error={errors.nome}
+          required
+        />
+        <Input
+          label="CPF"
+          name="cpf_Cnpj"
+          value={formData.cpf_Cnpj}
+          onChange={handleChange}
+          error={errors.cpf_Cnpj}
+          required
+          placeholder="000.000.000-00"
+          maxLength={14}
+        />
+        <Input
+          label="Telefone"
+          name="telefone"
+          value={formData.telefone}
+          onChange={handleChange}
+          placeholder="(00) 00000-0000"
+          maxLength={15}
+        />
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+        />
+        <Input
+          label="Endereço"
+          name="endereco"
+          value={formData.endereco}
+          onChange={handleChange}
+        />
+        <Input
+          label="Limite de Crédito"
+          name="limite"
+          type="number"
+          step="0.01"
+          min="0.01"
+          value={formData.limite}
+          onChange={handleChange}
+          error={errors.limite}
+          required
+          placeholder="0,00"
+        />
+        <div>
+          <label className="input-label">
+            Empresa <span className="text-danger">*</span>
+          </label>
+          <Select
+            options={empresaOptions}
+            value={selectedEmpresa}
+            onChange={handleEmpresaChange}
+            onInputChange={(value) => setEmpresaInputValue(value)}
+            placeholder="Pesquisar empresa..."
+            noOptionsMessage={() => "Nenhuma empresa encontrada"}
+            isClearable
+            menuPlacement="auto"
+            className={errors.idEmpresa ? "border-danger rounded-md" : ""}
+            styles={{
+              control: (provided, state) => ({
+                ...provided,
+                minHeight: "27px",
+                height: "27px",
+                borderRadius: "0.5rem",
+                borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
+                boxShadow: state.isFocused
+                  ? "0 0 0 2px rgba(26,43,76,0.15)"
+                  : "none",
+                fontSize: "14px",
+              }),
+
+              valueContainer: (provided) => ({
+                ...provided,
+                height: "27px",
+                padding: "0 12px",
+              }),
+
+              indicatorsContainer: (provided) => ({
+                ...provided,
+                height: "27px",
+              }),
+
+              placeholder: (provided) => ({
+                ...provided,
+                fontSize: "9px",
+                color: "#9ca3af",
+              }),
+
+              singleValue: (provided) => ({
+                ...provided,
+                fontSize: "9px",
+              }),
+
+              indicatorSeparator: () => ({
+                display: "none",
+              }),
+            }}
+          />
+          {errors.idEmpresa && (
+            <p className="input-error">{errors.idEmpresa}</p>
+          )}
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome *
-            </label>
-            <input
-              type="text"
-              name="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.nome ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.nome && (
-              <p className="mt-1 text-xs text-red-500">{errors.nome}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              CPF *
-            </label>
-            <input
-              type="text"
-              name="cpf_Cnpj"
-              value={formData.cpf_Cnpj}
-              onChange={handleChange}
-              maxLength={14}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.cpf_Cnpj ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="000.000.000-00"
-            />
-            {errors.cpf_Cnpj && (
-              <p className="mt-1 text-xs text-red-500">{errors.cpf_Cnpj}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefone
-            </label>
-            <input
-              type="tel"
-              name="telefone"
-              value={formData.telefone}
-              onChange={handleChange}
-              maxLength={15}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="(00) 00000-0000"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Endereço
-            </label>
-            <textarea
-              name="endereco"
-              value={formData.endereco}
-              onChange={handleChange}
-              rows="2"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Limite de Crédito * (R$)
-            </label>
-            <input
-              type="number"
-              name="limite"
-              value={formData.limite}
-              onChange={handleChange}
-              step="0.01"
-              min="0.01"
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.limite ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="0,00"
-            />
-            {errors.limite && (
-              <p className="mt-1 text-xs text-red-500">{errors.limite}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Empresa *
-            </label>
-            <select
-              name="idEmpresa"
-              value={formData.idEmpresa}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.idEmpresa ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Selecione uma empresa</option>
-              {empresas.map((emp) => (
-                <option key={emp.idEmpresa} value={emp.idEmpresa}>
-                  {emp.nome}
-                </option>
-              ))}
-            </select>
-            {errors.idEmpresa && (
-              <p className="mt-1 text-xs text-red-500">{errors.idEmpresa}</p>
-            )}
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-white bg-[#1A2B4C] rounded-md hover:bg-[#152340] disabled:opacity-50"
-            >
-              {loading ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };
 
@@ -304,12 +326,11 @@ const SimulacaoParcelas = ({
       const parcelasArray = [];
 
       let dataBase;
-
       if (dataPrimeiroVencimento) {
         const [ano, mes, dia] = dataPrimeiroVencimento.split("-").map(Number);
         dataBase = new Date(ano, mes - 1, dia);
       } else if (dataCompra) {
-        const [ano, mes, dia] = dataCompra.split("-").map(Number);
+        const [ano, mes] = dataCompra.split("-").map(Number);
         dataBase = new Date(ano, mes, 1);
       } else {
         return;
@@ -317,14 +338,9 @@ const SimulacaoParcelas = ({
 
       for (let i = 0; i < numeroParcelas; i++) {
         const dataVencimento = new Date(dataBase);
-
-        if (i > 0) {
-          dataVencimento.setMonth(dataVencimento.getMonth() + i);
-        }
+        if (i > 0) dataVencimento.setMonth(dataVencimento.getMonth() + i);
 
         let valorAtual = valorParcela;
-
-        // última parcela recebe a diferença
         if (i === numeroParcelas - 1) {
           valorAtual = Number(
             (valorTotal - valorParcela * (numeroParcelas - 1)).toFixed(2)
@@ -347,15 +363,15 @@ const SimulacaoParcelas = ({
 
   return (
     <div className="mt-6">
-      <h3 className="text-lg font-semibold mb-3" style={{ color: "#1A2B4C" }}>
-        SIMULAÇÃO DAS PARCELAS
+      <h3 className="text-lg font-semibold mb-3 text-primary-800">
+        Simulação das Parcelas
       </h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border rounded-lg">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Parcelas
+                Parcela
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Vencimento
@@ -385,69 +401,6 @@ const SimulacaoParcelas = ({
           </tbody>
         </table>
       </div>
-    </div>
-  );
-};
-
-// Componente de paginação
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      let startPage = Math.max(1, currentPage - 2);
-      let endPage = Math.min(totalPages, startPage + 4);
-
-      if (endPage - startPage < 4) {
-        startPage = Math.max(1, endPage - 4);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  };
-
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="flex items-center space-x-1">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="p-2 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <ChevronLeftIcon className="h-4 w-4" />
-      </button>
-
-      {getPageNumbers().map((page) => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`px-3 py-1 rounded-md text-sm transition-colors ${
-            currentPage === page
-              ? "bg-[#1A2B4C] text-white"
-              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="p-2 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <ChevronRightIcon className="h-4 w-4" />
-      </button>
     </div>
   );
 };
@@ -503,9 +456,7 @@ const Compras = () => {
   }, [formData.idCliente, clientes]);
 
   useEffect(() => {
-    if (clienteSelecionado) {
-      checkLimiteCredito(clienteSelecionado);
-    }
+    if (clienteSelecionado) checkLimiteCredito(clienteSelecionado);
   }, [formData.valor_Total, compras, clienteSelecionado]);
 
   const loadEmpresas = async () => {
@@ -532,7 +483,6 @@ const Compras = () => {
       const response = await api.get(`/compras/cliente/${clienteId}`);
       setCompras(response.data);
     } catch (error) {
-      console.error(error);
       toast.error("Erro ao carregar histórico");
     } finally {
       setLoadingCompras(false);
@@ -541,45 +491,32 @@ const Compras = () => {
 
   const checkLimiteCredito = (cliente) => {
     if (!cliente) return;
-
-    // Limite disponível
     const limiteDisponivel = cliente.limite - (cliente.divida || 0);
 
     if (formData.valor_Total) {
       const valorCompra = parseFloat(formData.valor_Total);
-
       if (valorCompra > limiteDisponivel) {
         setLimiteAlert({
           show: true,
-          message: `⚠️ Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
+          message: `Atenção! Este cliente possui apenas ${limiteDisponivel.toLocaleString(
             "pt-BR",
-            { style: "currency", currency: "BRL" }
-          )} de limite disponível. O valor da compra excede o limite em ${(
-            valorCompra - limiteDisponivel
-          ).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          })}.`,
+            {
+              style: "currency",
+              currency: "BRL",
+            }
+          )} de limite disponível. O valor da compra excede o limite.`,
           disponivel: limiteDisponivel,
         });
-
         return;
       }
     }
-
-    setLimiteAlert({
-      show: false,
-      message: "",
-      disponivel: limiteDisponivel,
-    });
+    setLimiteAlert({ show: false, message: "", disponivel: limiteDisponivel });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    if (formErrors[name]) {
-      setFormErrors({ ...formErrors, [name]: null });
-    }
+    if (formErrors[name]) setFormErrors({ ...formErrors, [name]: null });
   };
 
   const validateForm = () => {
@@ -591,12 +528,10 @@ const Compras = () => {
     }
     if (!formData.data_Compra)
       errors.data_Compra = "Data da compra é obrigatória";
-    if (!formData.parcelas || formData.parcelas < 1) {
+    if (!formData.parcelas || formData.parcelas < 1)
       errors.parcelas = "Número de parcelas deve ser pelo menos 1";
-    }
-    if (formData.parcelas > 24) {
+    if (formData.parcelas > 24)
       errors.parcelas = "Número máximo de parcelas é 24";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -610,13 +545,11 @@ const Compras = () => {
     try {
       const [ano, mes, dia] = formData.data_Compra.split("-").map(Number);
       const dataCorreta = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
-      const dataISO = dataCorreta.toISOString();
-
       const compraData = {
         idEmpresa: parseInt(formData.idEmpresa),
         idCliente: parseInt(formData.idCliente),
         valor_Total: parseFloat(formData.valor_Total),
-        data_Compra: dataISO,
+        data_Compra: dataCorreta.toISOString(),
         parcelas: parseInt(formData.parcelas),
       };
 
@@ -627,21 +560,15 @@ const Compras = () => {
         const [anoVenc, mesVenc, diaVenc] = formData.dataPrimeiroVencimento
           .split("-")
           .map(Number);
-        const dataPrimeiroVencimentoISO = new Date(
+        compraData.dataPrimeiroVencimento = new Date(
           Date.UTC(anoVenc, mesVenc - 1, diaVenc, 12, 0, 0)
         ).toISOString();
-        compraData.dataPrimeiroVencimento = dataPrimeiroVencimentoISO;
       }
 
-      console.log("Enviando dados:", compraData);
-      const response = await api.post("/compras", compraData);
-
+      await api.post("/compras", compraData);
       toast.success("Compra registrada com sucesso!");
 
-      if (formData.idCliente) {
-        await filterComprasByCliente(formData.idCliente);
-      }
-
+      if (formData.idCliente) await filterComprasByCliente(formData.idCliente);
       await loadClientes();
 
       setFormData({
@@ -653,18 +580,11 @@ const Compras = () => {
         dataPrimeiroVencimento: "",
       });
     } catch (error) {
-      console.error("Erro ao registrar compra:", error);
-      console.error("Detalhes do erro:", error.response?.data);
-
-      if (error.response?.data?.erro) {
-        toast.error(error.response.data.erro);
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else if (error.response?.data) {
-        toast.error(JSON.stringify(error.response.data));
-      } else {
-        toast.error("Erro ao registrar compra");
-      }
+      toast.error(
+        error.response?.data?.erro ||
+          error.response?.data?.message ||
+          "Erro ao registrar compra"
+      );
     } finally {
       setLoading(false);
     }
@@ -681,12 +601,6 @@ const Compras = () => {
   const currentCompras = compras.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(compras.length / itemsPerPage);
 
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -696,21 +610,12 @@ const Compras = () => {
 
   const formatDate = (date) => {
     if (!date) return "-";
-
+    if (typeof date === "string" && date.startsWith("0001")) return "-";
     try {
-      // Se a string for "0001-01-01T00:00:00", retornar "-"
-      if (typeof date === "string" && date.startsWith("0001")) {
-        return "-";
-      }
-
       const dataObj = new Date(date);
-
       if (isNaN(dataObj.getTime())) return "-";
-
-      // Formatar para o padrão brasileiro
       return dataObj.toLocaleDateString("pt-BR");
-    } catch (error) {
-      console.error("Erro ao formatar data:", error);
+    } catch {
       return "-";
     }
   };
@@ -721,375 +626,443 @@ const Compras = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#1A2B4C" }}>
-            Registrar Compra
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Cadastre uma nova compra com parcelamento
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Registrar Compra</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Cadastre uma nova compra com parcelamento
+        </p>
       </div>
 
       {limiteAlert.show && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
-          <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2" />
-            <p className="text-sm text-yellow-700">{limiteAlert.message}</p>
+        <div className="bg-warning/10 border-l-4 border-warning p-4 rounded-lg">
+          <div className="flex items-center gap-2">
+            <ExclamationTriangleIcon className="h-5 w-5 text-warning" />
+            <p className="text-sm text-warning">{limiteAlert.message}</p>
           </div>
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg border border-gray-200 p-6 space-y-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Empresa *
-            </label>
-            <Select
-              options={empresas
-                .filter((emp) => {
-                  // se não digitou nada, mostra só 6
-                  if (!empresaInputValue) return true;
-
-                  return emp.nome
-                    .toLowerCase()
-                    .includes(empresaInputValue.toLowerCase());
-                })
-                .slice(0, empresaInputValue ? empresas.length : 6)
-                .map((emp) => ({
-                  value: emp.idEmpresa,
-                  label: emp.nome,
-                }))}
-              value={
-                empresas
-                  .filter(
-                    (emp) => emp.idEmpresa === parseInt(formData.idEmpresa)
-                  )
-                  .map((emp) => ({
-                    value: emp.idEmpresa,
-                    label: emp.nome,
-                  }))[0] || null
-              }
-              onChange={(selectedOption) =>
-                setFormData({
-                  ...formData,
-                  idEmpresa: selectedOption
-                    ? selectedOption.value.toString()
-                    : "",
-                })
-              }
-              onInputChange={(value) => setEmpresaInputValue(value)}
-              placeholder="Pesquisar empresa..."
-              noOptionsMessage={() => "Nenhuma empresa encontrada"}
-              isClearable
-              menuPlacement="auto"
-              className={
-                formErrors.idEmpresa ? "border border-red-500 rounded-md" : ""
-              }
-            />
-            {formErrors.idEmpresa && (
-              <p className="mt-1 text-xs text-red-500">
-                {formErrors.idEmpresa}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Data da Compra *
-            </label>
-            <input
-              type="date"
-              name="data_Compra"
-              value={formData.data_Compra}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                formErrors.data_Compra ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {formErrors.data_Compra && (
-              <p className="mt-1 text-xs text-red-500">
-                {formErrors.data_Compra}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Valor Total * (R$)
-            </label>
-            <input
-              type="number"
-              name="valor_Total"
-              value={formData.valor_Total}
-              onChange={handleChange}
-              step="0.01"
-              min="0.01"
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                formErrors.valor_Total ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="0,00"
-            />
-            {formErrors.valor_Total && (
-              <p className="mt-1 text-xs text-red-500">
-                {formErrors.valor_Total}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cliente *
-            </label>
-
-            <div className="flex gap-2">
-              <div className="flex-1">
+      <Card>
+        <CardBody>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="input-label">Empresa *</label>
                 <Select
-                  options={clientes
-                    .filter((cli) => {
-                      // se não digitou nada, mostra só 6
-                      if (!inputValue) return true;
-
-                      return `${cli.nome} - ${cli.cpf_Cnpj}`
-                        .toLowerCase()
-                        .includes(inputValue.toLowerCase());
-                    })
-                    .slice(0, inputValue ? clientes.length : 6)
-                    .map((cli) => ({
-                      value: cli.idCliente,
-                      label: `${cli.nome} - ${cli.cpf_Cnpj}`,
-                    }))}
+                  options={empresas
+                    .filter(
+                      (emp) =>
+                        !empresaInputValue ||
+                        emp.nome
+                          .toLowerCase()
+                          .includes(empresaInputValue.toLowerCase())
+                    )
+                    .slice(0, empresaInputValue ? empresas.length : 6)
+                    .map((emp) => ({ value: emp.idEmpresa, label: emp.nome }))}
                   value={
-                    clientes
-                      .filter(
-                        (cli) => cli.idCliente === parseInt(formData.idCliente)
-                      )
-                      .map((cli) => ({
-                        value: cli.idCliente,
-                        label: `${cli.nome} - ${cli.cpf_Cnpj}`,
-                      }))[0] || null
+                    empresas.find(
+                      (emp) => emp.idEmpresa === parseInt(formData.idEmpresa)
+                    )
+                      ? {
+                          value: parseInt(formData.idEmpresa),
+                          label: empresas.find(
+                            (emp) =>
+                              emp.idEmpresa === parseInt(formData.idEmpresa)
+                          )?.nome,
+                        }
+                      : null
                   }
-                  onChange={(selectedOption) =>
+                  onChange={(opt) =>
                     setFormData({
                       ...formData,
-                      idCliente: selectedOption
-                        ? selectedOption.value.toString()
-                        : "",
+                      idEmpresa: opt ? opt.value.toString() : "",
                     })
                   }
-                  onInputChange={(value) => setInputValue(value)}
-                  placeholder="Pesquisar cliente..."
-                  noOptionsMessage={() => "Nenhum cliente encontrado"}
+                  onInputChange={(val) => setEmpresaInputValue(val)}
+                  placeholder="Pesquisar empresa..."
                   isClearable
                   menuPlacement="auto"
+                  menuPortalTarget={document.body}
+                  styles={{
+                    control: (provided, state) => ({
+                      ...provided,
+                      minHeight: "27px",
+                      height: "27px",
+                      borderRadius: "0.5rem",
+                      borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
+                      boxShadow: state.isFocused
+                        ? "0 0 0 2px rgba(26,43,76,0.15)"
+                        : "none",
+                      fontSize: "14px",
+                    }),
+
+                    valueContainer: (provided) => ({
+                      ...provided,
+                      height: "27px",
+                      padding: "0 12px",
+                    }),
+
+                    indicatorsContainer: (provided) => ({
+                      ...provided,
+                      height: "27px",
+                    }),
+
+                    placeholder: (provided) => ({
+                      ...provided,
+                      fontSize: "9px",
+                      color: "#9ca3af",
+                    }),
+
+                    singleValue: (provided) => ({
+                      ...provided,
+                      fontSize: "9px",
+                    }),
+
+                    indicatorSeparator: () => ({
+                      display: "none",
+                    }),
+                  }}
+                  className={
+                    formErrors.idEmpresa
+                      ? "border border-danger rounded-md"
+                      : ""
+                  }
                 />
+                {formErrors.idEmpresa && (
+                  <p className="input-error">{formErrors.idEmpresa}</p>
+                )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowClienteModal(true)}
-                className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                title="Novo Cliente"
-              >
-                <UserPlusIcon className="h-5 w-5" />
-              </button>
+              <div>
+                <label className="input-label">Data da Compra *</label>
+                <input
+                  type="date"
+                  name="data_Compra"
+                  value={formData.data_Compra}
+                  onChange={handleChange}
+                  className={`input ${
+                    formErrors.data_Compra ? "border-danger" : ""
+                  }`}
+                />
+                {formErrors.data_Compra && (
+                  <p className="input-error">{formErrors.data_Compra}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="input-label">Valor Total * (R$)</label>
+                <input
+                  type="number"
+                  name="valor_Total"
+                  value={formData.valor_Total}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0.01"
+                  className={`input ${
+                    formErrors.valor_Total ? "border-danger" : ""
+                  }`}
+                  placeholder="0,00"
+                />
+                {formErrors.valor_Total && (
+                  <p className="input-error">{formErrors.valor_Total}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="input-label">Cliente *</label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Select
+                      options={clientes
+                        .filter(
+                          (cli) =>
+                            !inputValue ||
+                            `${cli.nome} - ${cli.cpf_Cnpj}`
+                              .toLowerCase()
+                              .includes(inputValue.toLowerCase())
+                        )
+                        .slice(0, inputValue ? clientes.length : 6)
+                        .map((cli) => ({
+                          value: cli.idCliente,
+                          label: `${cli.nome} - ${cli.cpf_Cnpj}`,
+                        }))}
+                      value={
+                        clientes.find(
+                          (cli) =>
+                            cli.idCliente === parseInt(formData.idCliente)
+                        )
+                          ? {
+                              value: parseInt(formData.idCliente),
+                              label: `${
+                                clientes.find(
+                                  (cli) =>
+                                    cli.idCliente ===
+                                    parseInt(formData.idCliente)
+                                )?.nome
+                              } - ${
+                                clientes.find(
+                                  (cli) =>
+                                    cli.idCliente ===
+                                    parseInt(formData.idCliente)
+                                )?.cpf_Cnpj
+                              }`,
+                            }
+                          : null
+                      }
+                      onChange={(opt) =>
+                        setFormData({
+                          ...formData,
+                          idCliente: opt ? opt.value.toString() : "",
+                        })
+                      }
+                      onInputChange={(val) => setInputValue(val)}
+                      placeholder="Pesquisar cliente..."
+                      isClearable
+                      menuPlacement="auto"
+                      menuPortalTarget={document.body}
+                      styles={{
+                        control: (provided, state) => ({
+                          ...provided,
+                          minHeight: "27px",
+                          height: "27px",
+                          borderRadius: "0.5rem",
+                          borderColor: state.isFocused ? "#1A2B4C" : "#d1d5db",
+                          boxShadow: state.isFocused
+                            ? "0 0 0 2px rgba(26,43,76,0.15)"
+                            : "none",
+                          fontSize: "14px",
+                        }),
+
+                        valueContainer: (provided) => ({
+                          ...provided,
+                          height: "27px",
+                          padding: "0 12px",
+                        }),
+
+                        indicatorsContainer: (provided) => ({
+                          ...provided,
+                          height: "27px",
+                        }),
+
+                        placeholder: (provided) => ({
+                          ...provided,
+                          fontSize: "9px",
+                          color: "#9ca3af",
+                        }),
+
+                        singleValue: (provided) => ({
+                          ...provided,
+                          fontSize: "9px",
+                        }),
+
+                        indicatorSeparator: () => ({
+                          display: "none",
+                        }),
+
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
+                      }}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => setShowClienteModal(true)}
+                    icon={UserPlusIcon}
+                    className="!px-3"
+                  >
+                    Novo
+                  </Button>
+                </div>
+                {formErrors.idCliente && (
+                  <p className="input-error">{formErrors.idCliente}</p>
+                )}
+                {clienteSelecionado && (
+                  <p
+                    className={`mt-1 text-sm font-semibold ${
+                      limiteAlert.disponivel <= 0
+                        ? "text-danger"
+                        : limiteAlert.disponivel <
+                          clienteSelecionado.limite * 0.3
+                        ? "text-warning"
+                        : "text-success"
+                    }`}
+                  >
+                    Limite disponível: {formatCurrency(limiteAlert.disponivel)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="input-label">Data do 1º Vencimento</label>
+                <input
+                  type="date"
+                  name="dataPrimeiroVencimento"
+                  value={formData.dataPrimeiroVencimento}
+                  onChange={handleChange}
+                  className="input"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Se não preenchido, será usado o primeiro dia do próximo mês
+                </p>
+              </div>
+
+              <div>
+                <label className="input-label">Nº de Parcelas *</label>
+                <input
+                  type="number"
+                  name="parcelas"
+                  value={formData.parcelas}
+                  onChange={handleChange}
+                  min="1"
+                  max="24"
+                  className={`input ${
+                    formErrors.parcelas ? "border-danger" : ""
+                  }`}
+                />
+                {formErrors.parcelas && (
+                  <p className="input-error">{formErrors.parcelas}</p>
+                )}
+              </div>
             </div>
 
-            {formErrors.idCliente && (
-              <p className="mt-1 text-xs text-red-500">
-                {formErrors.idCliente}
-              </p>
-            )}
+            <SimulacaoParcelas
+              valorTotal={valorTotalNum}
+              numeroParcelas={numeroParcelasNum}
+              dataPrimeiroVencimento={formData.dataPrimeiroVencimento}
+              dataCompra={formData.data_Compra}
+            />
 
-            {clienteSelecionado && (
-              <p
-                className={`mt-1 text-sm font-semibold ${
-                  limiteAlert.disponivel <= 0
-                    ? "text-red-600"
-                    : limiteAlert.disponivel < clienteSelecionado.limite * 0.3
-                    ? "text-yellow-600"
-                    : "text-green-600"
-                }`}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFormData({
+                    idEmpresa: "",
+                    idCliente: "",
+                    valor_Total: "",
+                    data_Compra: new Date().toISOString().split("T")[0],
+                    parcelas: 1,
+                    dataPrimeiroVencimento: "",
+                  });
+                }}
               >
-                Limite disponível: {formatCurrency(limiteAlert.disponivel)}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Data do 1º Vencimento
-            </label>
-            <input
-              type="date"
-              name="dataPrimeiroVencimento"
-              value={formData.dataPrimeiroVencimento}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C]"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Se não preenchido, será usado o primeiro dia do próximo mês
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nº de Parcelas *
-            </label>
-            <input
-              type="number"
-              name="parcelas"
-              value={formData.parcelas}
-              onChange={handleChange}
-              min="1"
-              max="24"
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1A2B4C] ${
-                formErrors.parcelas ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {formErrors.parcelas && (
-              <p className="mt-1 text-xs text-red-500">{formErrors.parcelas}</p>
-            )}
-          </div>
-        </div>
-
-        <SimulacaoParcelas
-          valorTotal={valorTotalNum}
-          numeroParcelas={numeroParcelasNum}
-          dataPrimeiroVencimento={formData.dataPrimeiroVencimento}
-          dataCompra={formData.data_Compra}
-        />
-
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => {
-              setFormData({
-                idEmpresa: "",
-                idCliente: "",
-                valor_Total: "",
-                data_Compra: new Date().toISOString().split("T")[0],
-                parcelas: 1,
-                dataPrimeiroVencimento: "",
-              });
-            }}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Limpar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 text-white bg-[#1A2B4C] rounded-md hover:bg-[#152340] disabled:opacity-50"
-          >
-            {loading ? "Registrando..." : "Registrar Compra"}
-          </button>
-        </div>
-      </form>
+                Limpar
+              </Button>
+              <Button type="submit" isLoading={loading} icon={ShoppingCartIcon}>
+                Registrar Compra
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
 
       {formData.idCliente && (
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <DocumentTextIcon className="h-5 w-5 text-gray-500" />
-              <h2
-                className="text-lg font-semibold"
-                style={{ color: "#1A2B4C" }}
-              >
-                Histórico de Compras - {clienteNome}
-              </h2>
-            </div>
-            <span className="text-sm text-gray-500">
-              Total: {compras.length} compras
-            </span>
-          </div>
-
-          {loadingCompras ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A2B4C]"></div>
-              <span className="ml-3 text-gray-500">
-                Carregando histórico...
-              </span>
-            </div>
-          ) : currentCompras.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">Nenhuma compra encontrada</p>
-              <p className="text-sm mt-1">
-                Este cliente ainda não realizou compras
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data Compra
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Valor Total
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Parcelas
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Empresa
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentCompras.map((compra) => (
-                      <tr
-                        key={compra.idCompra}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {compra.idCompra}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatDate(compra.data_Compra)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatCurrency(compra.valor_Total)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {compra.parcelas}x
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {compra.empresa || "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <ReceiptPercentIcon className="h-5 w-5 text-gray-500" />
+                <h2 className="text-lg font-semibold text-primary-800">
+                  Histórico de Compras - {clienteNome}
+                </h2>
               </div>
-
-              {totalPages > 1 && (
-                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-sm text-gray-500">
-                    Mostrando {indexOfFirstItem + 1} até{" "}
-                    {Math.min(indexOfLastItem, compras.length)} de{" "}
-                    {compras.length}
-                  </span>
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={goToPage}
-                  />
+              <Badge variant="info">Total: {compras.length} compras</Badge>
+            </div>
+          </CardHeader>
+          <CardBody className="p-0">
+            {loadingCompras ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-800" />
+                <span className="ml-3 text-gray-500">
+                  Carregando histórico...
+                </span>
+              </div>
+            ) : currentCompras.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <ShoppingCartIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p>Nenhuma compra encontrada</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Data Compra
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Valor Total
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Parcelas
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Empresa
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {currentCompras.map((compra) => (
+                        <tr key={compra.idCompra} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {compra.idCompra}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDate(compra.data_Compra)}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                            {formatCurrency(compra.valor_Total)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {compra.parcelas}x
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {compra.empresa || "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                {totalPages > 1 && (
+                  <div className="flex justify-between items-center px-6 py-3 border-t border-gray-100">
+                    <span className="text-sm text-gray-500">
+                      Mostrando {indexOfFirstItem + 1} até{" "}
+                      {Math.min(indexOfLastItem, compras.length)} de{" "}
+                      {compras.length}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-md border bg-white disabled:opacity-50"
+                      >
+                        <ChevronLeftIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-md border bg-white disabled:opacity-50"
+                      >
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardBody>
+        </Card>
       )}
 
       <ClienteRapidoModal

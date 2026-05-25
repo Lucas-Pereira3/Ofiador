@@ -72,8 +72,27 @@ namespace Ofiador.API.Controllers
         public IActionResult ListarPagamento()
         {
             var pagamentos = _context.Pagamentos
-            .Include(p => p.Fatura).ThenInclude(f =>f.Cliente)
-            .ToList();
+                .Include(p => p.Fatura)
+                    .ThenInclude(f => f.Cliente)
+                .Select(p => new
+                {
+                    p.IdPagamento,
+                    p.Data_Pagamento,
+                    p.ValorPago,
+                    p.IdFatura,
+                    p.MetodoPagamento,
+                    Fatura = p.Fatura == null ? null : new
+                    {
+                        p.Fatura.IdFatura,
+                        Cliente = p.Fatura.Cliente == null ? null : new
+                        {
+                            p.Fatura.Cliente.IdCliente,
+                            p.Fatura.Cliente.Nome,
+                            p.Fatura.Cliente.Cpf_Cnpj
+                        }
+                    }
+                })
+                .ToList();
 
             return Ok(pagamentos);
         }
