@@ -157,17 +157,19 @@ const formatDate = (dateString) => {
 const StatusBall = ({ diasAtraso, status }) => {
   if (status === "paga") {
     return (
-      <div className="flex items-center gap-1.5">
-        <span className="inline-block w-2.5 h-2.5 rounded-full bg-success" />
-        <span className="text-xs text-success">Paga</span>
+      <div className="flex items-start gap-1.5 min-w-[160px]">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-success mt-1 flex-shrink-0" />
+        <span className="text-xs text-success break-words leading-tight">
+          Paga
+        </span>
       </div>
     );
   }
   if (diasAtraso > 7) {
     return (
-      <div className="flex items-center gap-1.5">
-        <span className="inline-block w-2.5 h-2.5 rounded-full bg-danger" />
-        <span className="text-xs text-danger">
+      <div className="flex items-start gap-1.5 min-w-[160px]">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-danger mt-1 flex-shrink-0" />
+        <span className="text-xs text-danger break-words leading-tight">
           Atrasado ({diasAtraso} dias)
         </span>
       </div>
@@ -175,18 +177,20 @@ const StatusBall = ({ diasAtraso, status }) => {
   }
   if (diasAtraso > 0) {
     return (
-      <div className="flex items-center gap-1.5">
-        <span className="inline-block w-2.5 h-2.5 rounded-full bg-warning" />
-        <span className="text-xs text-warning">
+      <div className="flex items-start gap-1.5 min-w-[160px]">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-warning mt-1 flex-shrink-0" />
+        <span className="text-xs text-warning break-words leading-tight">
           Vence em breve ({diasAtraso} dias)
         </span>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="inline-block w-2.5 h-2.5 rounded-full bg-success" />
-      <span className="text-xs text-success">Em dia</span>
+    <div className="flex items-start gap-1.5 min-w-[160px]">
+      <span className="inline-block w-2.5 h-2.5 rounded-full bg-success mt-1 flex-shrink-0" />
+      <span className="text-xs text-success break-words leading-tight">
+        Em dia
+      </span>
     </div>
   );
 };
@@ -389,7 +393,7 @@ const Relatorios = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
@@ -432,8 +436,9 @@ const Relatorios = () => {
                 handleLimpar();
               }}
               className={`
-          flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium 
-          transition-all duration-200 whitespace-nowrap
+          flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-xl
+          text-xs sm:text-sm font-medium
+          transition-all duration-200 whitespace-nowrap flex-shrink-0
           ${
             ativa
               ? "bg-primary-800 text-white shadow-md"
@@ -449,9 +454,9 @@ const Relatorios = () => {
       </div>
 
       {/* Layout: Filtros + Conteúdo */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[250px_minmax(0,1fr)] gap-6">
         {/* Painel de Filtros - Desktop */}
-        <div className="hidden lg:block w-72 flex-shrink-0">
+        <div className="hidden xl:block w-full xl:w-72 flex-shrink-0">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -474,7 +479,7 @@ const Relatorios = () => {
                     setEmpresaId(e.target.value);
                     setClienteId("");
                   }}
-                  className="input"
+                  className="input w-full"
                 >
                   <option value="">Todas as empresas</option>
                   {empresasMock.map((emp) => (
@@ -494,7 +499,7 @@ const Relatorios = () => {
                 <select
                   value={clienteId}
                   onChange={(e) => setClienteId(e.target.value)}
-                  className="input"
+                  className="input w-full"
                   disabled={
                     !empresaId &&
                     clientesFiltrados.length === clientesMock.length
@@ -549,7 +554,7 @@ const Relatorios = () => {
                       setDataInicio(e.target.value);
                       setPeriodoRapido("");
                     }}
-                    className="input"
+                    className="input w-full"
                     placeholder="Data inicial"
                   />
                   <input
@@ -559,7 +564,7 @@ const Relatorios = () => {
                       setDataFim(e.target.value);
                       setPeriodoRapido("");
                     }}
-                    className="input"
+                    className="input w-full"
                     placeholder="Data final"
                   />
                 </div>
@@ -598,7 +603,7 @@ const Relatorios = () => {
         </div>
 
         {/* Botão mobile para abrir filtros */}
-        <div className="lg:hidden">
+        <div className="xl:hidden">
           <Button
             variant="outline"
             onClick={() => setShowMobileFilters(true)}
@@ -621,7 +626,7 @@ const Relatorios = () => {
         {/* Conteúdo principal */}
         <div className="flex-1 min-w-0">
           {/* Cards de totais */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card className="border-l-4 border-l-primary-800">
               <CardBody className="p-4">
                 <p className="text-xs text-gray-500 mb-1">
@@ -686,29 +691,29 @@ const Relatorios = () => {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
+                <div className="w-full overflow-x-auto">
+                  <table className="w-full table-auto">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 w-[20%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Cliente
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 w-[12%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Empresa
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Total Dívida
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Valor Pago
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Saldo Devedor
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Próximo Vencimento
                         </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3.5 min-w-[180px] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Status
                         </th>
                       </tr>
@@ -719,19 +724,19 @@ const Relatorios = () => {
                           key={row.id}
                           className="hover:bg-gray-50 transition-colors duration-150"
                         >
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">
                                 {row.cliente}
                               </p>
-                              <p className="text-xs text-gray-400">
+                              <p className="text-xs text-gray-400 whitespace-nowrap">
                                 {clientesMock.find(
                                   (c) => c.id === row.clienteId
                                 )?.cpf || "-"}
                               </p>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <Badge variant="default" className="bg-gray-100">
                               {row.empresa}
                             </Badge>
@@ -758,7 +763,7 @@ const Relatorios = () => {
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {formatDate(row.proximoVencimento)}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 min-w-[180px]">
                             <StatusBall
                               diasAtraso={row.diasAtraso}
                               status={row.status}
@@ -862,7 +867,7 @@ const Relatorios = () => {
                     setEmpresaId(e.target.value);
                     setClienteId("");
                   }}
-                  className="input"
+                  className="input text-sm"
                 >
                   <option value="">Todas as empresas</option>
                   {empresasMock.map((emp) => (
@@ -881,7 +886,7 @@ const Relatorios = () => {
                 <select
                   value={clienteId}
                   onChange={(e) => setClienteId(e.target.value)}
-                  className="input"
+                  className="input w-full"
                 >
                   <option value="">Todos os clientes</option>
                   {clientesFiltrados.map((cli) => (
@@ -928,14 +933,14 @@ const Relatorios = () => {
                     type="date"
                     value={dataInicio}
                     onChange={(e) => setDataInicio(e.target.value)}
-                    className="input"
+                    className="input w-full"
                     placeholder="Data inicial"
                   />
                   <input
                     type="date"
                     value={dataFim}
                     onChange={(e) => setDataFim(e.target.value)}
-                    className="input"
+                    className="input w-full"
                     placeholder="Data final"
                   />
                 </div>
@@ -968,7 +973,7 @@ const Relatorios = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         @keyframes slide-in-bottom {
           from {
             transform: translateY(100%);
