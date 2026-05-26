@@ -107,24 +107,46 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.nome.trim()) newErrors.nome = "Nome é obrigatório";
+
+    if (!formData.nome.trim()) {
+      newErrors.nome = "Nome é obrigatório";
+    } else if (formData.nome.length < 3) {
+      newErrors.nome = "Nome deve ter pelo menos 3 caracteres";
+    }
+
     if (!formData.cpf_Cnpj.trim()) {
       newErrors.cpf_Cnpj = "CPF é obrigatório";
-    } else if (!validateCPF(formData.cpf_Cnpj)) {
-      newErrors.cpf_Cnpj = "CPF inválido";
+    } else {
+      const cpfClean = formData.cpf_Cnpj.replace(/[^\d]/g, "");
+
+      if (cpfClean.length !== 11) {
+        newErrors.cpf_Cnpj = "CPF deve ter 11 dígitos";
+      } else if (!validateCPF(formData.cpf_Cnpj)) {
+        newErrors.cpf_Cnpj = "CPF inválido";
+      }
     }
-    if (!formData.limite || parseFloat(formData.limite) <= 0) {
+
+    if (!formData.limite) {
+      newErrors.limite = "Limite de crédito é obrigatório";
+    } else if (parseFloat(formData.limite) <= 0) {
       newErrors.limite = "Limite de crédito deve ser maior que zero";
     }
-    if (!formData.idEmpresa) newErrors.idEmpresa = "Empresa é obrigatória";
+
+    if (!formData.idEmpresa) {
+      newErrors.idEmpresa = "Empresa é obrigatória";
+    }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Por favor, corrija os erros no formulário");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -260,7 +282,7 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
             placeholder="Pesquisar empresa..."
             noOptionsMessage={() => "Nenhuma empresa encontrada"}
             isClearable
-            menuPlacement="auto"
+            menuPlacement="top"
             className={errors.idEmpresa ? "border-danger rounded-md" : ""}
             styles={{
               control: (provided, state) => ({
