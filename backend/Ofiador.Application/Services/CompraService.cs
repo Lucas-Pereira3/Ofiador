@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
-using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -12,9 +12,9 @@ namespace Ofiador.Application.Services
     
     public class CompraService
     {
-        private readonly CompraRepository _repository;
+        private readonly ICompraRepository _repository;
 
-        public CompraService(CompraRepository repository)
+        public CompraService(ICompraRepository repository)
         {
             _repository = repository;
         }
@@ -42,6 +42,11 @@ namespace Ofiador.Application.Services
                     DateTimeKind.Utc
                     ).AddMonths(1);
             }
+
+            if(compra.DataPrimeiroVencimento < compra.Data_Compra)
+            {
+                throw new Exception("A data de vencimento não pode ser menor que a data da compra");
+            }
             var cliente = _repository.BuscarCliente(compra.IdCliente);
 
     if (cliente == null)
@@ -55,6 +60,16 @@ namespace Ofiador.Application.Services
     {
         throw new Exception("Empresa não encontrada");
     }
+
+            if (compra.Valor_Total == 0) 
+            {
+                throw new Exception("Valor da compra deve ser maior que zero");
+            }
+
+            if(compra.Parcelas == 0 || compra.Parcelas >= 24)
+            {
+                throw new Exception("Quantidade de parcelas inválida");
+            }
 
             var dividaAtual = _repository.BuscarDividaAtual(compra.IdCliente);
 

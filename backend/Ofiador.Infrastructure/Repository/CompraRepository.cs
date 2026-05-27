@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Interfaces;
 namespace Ofiador.Infrastructure.Repository
 {
-    public class CompraRepository
+    public class CompraRepository : ICompraRepository
     {
         private readonly ApplicationDbContext _context;
 
