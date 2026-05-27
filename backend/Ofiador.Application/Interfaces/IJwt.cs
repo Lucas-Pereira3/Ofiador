@@ -1,6 +1,6 @@
 ﻿using Ofiador.Domain.Entities;
 
-namespace Ofiador.API
+namespace Ofiador.Application.Interfaces
 {
     public interface IJwt
     {

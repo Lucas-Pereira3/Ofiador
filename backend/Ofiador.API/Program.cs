@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
 using Ofiador.API.Controllers;
 using Ofiador.API.Repositories;
+using Ofiador.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,21 +77,20 @@ builder.Services.AddCors(options =>
     });
 });
 // ================= SERVICES =================
-builder.Services.AddScoped<Jwt>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmpresaService>();
-builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<CompraService>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
 builder.Services.AddScoped<RelatorioService>();
 //================= Interfaces =================
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IClienteService ,ClienteService>();
 builder.Services.AddScoped<IJwt, Jwt>();
 //================= Repositorys =================
-builder.Services.AddScoped<ClienteRepository>();
-builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<CompraRepository>();
-builder.Services.AddScoped<EmpresaRepository>();
+builder.Services.AddScoped<IEmpresaRepository , EmpresaRepository>();
 builder.Services.AddScoped<FaturaRepository>();
 builder.Services.AddScoped<PagamentoRepository>();
 builder.Services.AddScoped<RelatorioRepository>();
@@ -133,8 +134,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
-
-builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 

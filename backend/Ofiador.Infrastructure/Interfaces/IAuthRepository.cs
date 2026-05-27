@@ -1,6 +1,6 @@
 ﻿using Ofiador.Domain.Entities;
 
-namespace Ofiador.Infrastructure.Repository
+namespace Ofiador.Infrastructure.Interfaces
 {
     public interface IAuthRepository
     {

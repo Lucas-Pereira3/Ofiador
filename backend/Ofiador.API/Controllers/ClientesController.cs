@@ -5,6 +5,8 @@ using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Application.Services;
 using Ofiador.Application.DTOs;
+using Ofiador.Application.Interfaces;
+
 namespace Ofiador.API.Controllers
 {
  
@@ -12,12 +14,12 @@ namespace Ofiador.API.Controllers
     [Route("api/[controller]")]
     public class ClienteController : ControllerBase
     {
-        private readonly ClienteService _clienteService;
-        private readonly ApplicationDbContext _context;
-        public ClienteController(ClienteService clienteService, ApplicationDbContext context) 
+        private readonly IClienteService _clienteService;
+        
+        public ClienteController(IClienteService clienteService) 
         { 
             _clienteService = clienteService;
-            _context = context;
+           
         }
 
         [Authorize]
@@ -56,27 +58,11 @@ namespace Ofiador.API.Controllers
         [HttpGet]
         public IActionResult ListarClientes()
         {
-            var clientes = _context.Clientes.Include( c => c.Empresa)
-            .Select(c =>new ClienteDTOs
-            {
-                IdCliente = c.IdCliente,
-                Nome = c.Nome,
-                Cpf_Cnpj = c.Cpf_Cnpj,
-                Email = c.Email,
-                Endereco = c.Endereco,
-                Limite = c.Limite,
-                Telefone = c.Telefone,
-                IdEmpresa = c.IdEmpresa,
-                Empresa = c.Empresa !=null ? c.Empresa.Nome : string.Empty,
-                Divida = _context.Faturas
-                .Where(f => 
-                    f.IdCliente== c.IdCliente &&
-                    f.Status.ToUpper() != "PAGO").
-                    Sum(f => (decimal?)f.Total)??0
-            }).ToList();
+            var cliente = _clienteService.ListarCLientes();
 
-            return Ok(clientes);
+            return Ok(cliente);
         }
+
         [HttpGet("{id}/divida")]
         public async Task<IActionResult> GetDivida(int id)
         {
@@ -97,27 +83,7 @@ namespace Ofiador.API.Controllers
         [HttpGet("{id}")]
         public IActionResult BuscarClientes(int id)
         {
-            var cliente = _context.Clientes
-                .Include(c=>c.Empresa)
-                .Where(c=>c.IdCliente==id)
-                .Select(c=> new ClienteDTOs
-                {
-                    IdCliente = c.IdCliente,
-                    Nome= c.Nome,
-                    Cpf_Cnpj = c.Cpf_Cnpj,
-                    Email = c.Email,
-                    Endereco = c.Endereco,
-                    Limite = c.Limite,
-                    Telefone = c.Telefone,
-                    IdEmpresa = c.IdEmpresa,
-                    Empresa = c.Empresa != null
-                            ? c.Empresa.Nome
-                            : string.Empty,
-                    Divida = c.Faturas
-                    .SelectMany(f => f.CompraParcelas)
-                    .Where(p => !p.Pago)
-                    .Sum(p => (decimal?)p.ValorParcela) ?? 0
-                }).FirstOrDefault();
+            var cliente = _clienteService.BuscarClientePorId(id);
 
             if (cliente == null)
             {
@@ -174,6 +140,13 @@ namespace Ofiador.API.Controllers
 
             if (!resultado.sucesso)
             {
+                if (resultado.mensagem.Contains("faturas"))
+                {
+                    return Conflict(new
+                    {
+                        erro = resultado.mensagem
+                    });
+                }
                 return NotFound(new
                 {
                     erro=resultado.mensagem

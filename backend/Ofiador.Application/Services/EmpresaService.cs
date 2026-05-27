@@ -1,14 +1,14 @@
 using System.Text.RegularExpressions;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
-using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.Application.Services{
 public class EmpresaService
 {
-        private readonly EmpresaRepository _repositort;
+        private readonly IEmpresaRepository _repositort;
 
-    public EmpresaService(EmpresaRepository repository)
+    public EmpresaService(IEmpresaRepository repository)
     {
         _repositort = repository;
     }

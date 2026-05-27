@@ -5,10 +5,10 @@ using Ofiador.API.Controllers;
 using Ofiador.Application.Services;
 using Ofiador.Application.DTOs;
 using Ofiador.Domain.Entities;
-using Ofiador.API;
-using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
+using Ofiador.Application.Interfaces;
 
-namespace Ofiador.Test.Controllers
+namespace Ofiador.Test.UnitTests.Controllers
 {
     public class AuthControllerTests
     {

@@ -65,27 +65,29 @@ Ofiador/
 │
 │   ├── Ofiador.API/
 │   │   ├── Controllers/
-│   │   ├── DTOs/
 │   │   ├── Middleware/
 │   │   ├── Program.cs
 │   │   └── Dockerfile
 │
 │   ├── Ofiador.Application/
 │   │   ├── Services/
-│   │   └── Interfaces/
+|	|	├── Interfaces/
+│   │   └── DTOs/
 │
 │   ├── Ofiador.Domain/
 │   │   ├── Entities/
-│   │   ├── Models/
 │   │   └── Rules/
 │
 │   ├── Ofiador.Infrastructure/
 │   │   ├── Data/
+|	|	├── Interfaces/
 │   │   ├── Repositories/
 │   │   └── Migrations/
 │
 │   └── Tests/
 │       ├── UnitTests/
+|		|	├── Services
+|		|	├── Controllers
 │       └── IntegrationTests/
 │
 ├── frontend/
