@@ -1,6 +1,7 @@
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 

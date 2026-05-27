@@ -1,4 +1,5 @@
 using Microsoft.IdentityModel.Tokens;
+using Ofiador.Application.Interfaces;
 using Ofiador.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

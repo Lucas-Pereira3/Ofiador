@@ -1,5 +1,6 @@
 ﻿using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.Infrastructure.Repository
 {

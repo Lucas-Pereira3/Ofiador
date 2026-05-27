@@ -2,9 +2,9 @@
 using Moq;
 using Ofiador.Application.Services;
 using Ofiador.Domain.Entities;
-using Ofiador.Infrastructure.Repository;
+using Ofiador.Infrastructure.Interfaces;
 
-namespace Ofiador.Test.Service
+namespace Ofiador.Test.UnitTests.Service
 {
     public class AuthServiceTests
     {
