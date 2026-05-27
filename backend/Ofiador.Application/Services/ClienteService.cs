@@ -1,15 +1,18 @@
-using System.Text.RegularExpressions;
-using Ofiador.Infrastructure.Repository;
-using Ofiador.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Ofiador.Application.DTOs;
+using Ofiador.Domain.Entities;
+using Ofiador.Infrastructure.Interfaces;
+using Ofiador.Application.Interfaces;
+using Ofiador.Infrastructure.Repository;
+using System.Text.RegularExpressions;
 
 namespace Ofiador.Application.Services
 {
-    public class ClienteService
+    public class ClienteService : IClienteService
     {
-        private readonly ClienteRepository _repository;
+        private readonly IClienteRepository _repository;
 
-        public ClienteService(ClienteRepository repository){
+        public ClienteService(IClienteRepository repository){
             _repository = repository;
         }
         //Telefone Valido
@@ -225,7 +228,7 @@ namespace Ofiador.Application.Services
 
             if (!_repository.EmpresaExiste(cliente.IdEmpresa))
             {
-                return(false,"empresa não encontrada");
+                return(false,"Empresa não encontrada");
             }
 
             _repository.Adicionar(cliente);
@@ -312,26 +315,76 @@ namespace Ofiador.Application.Services
                 return (false, "cliente não encontrado");
             }
 
+            if (_repository.PossuiFaturaAberta(id))
+            {
+                return(false,"Cliente possui faturas aberta(s)");
+            }
             _repository.Remover(cliente);
 
             return (true,"Cliente excluido com sucesso");
         }
         public async Task<DividaClienteDto> GetDivida(int id)
-{
-    var cliente = _repository.BuscarPorId(id);
+        {
+            var cliente = _repository.BuscarPorId(id);
 
-    if (cliente == null)
-    {
-        throw new Exception("Cliente não encontrado");
-    }
+            if (cliente == null)
+            {
+                throw new Exception("Cliente não encontrado");
+            }
 
-    var divida = await _repository.GetDivida(id); 
+             var divida = await _repository.GetDivida(id); 
 
 
-    return new DividaClienteDto
-    {
-        TotalDivida = divida
-    };
-}
+            return new DividaClienteDto
+            {
+                TotalDivida = divida
+            };
+        }
+
+        public List<ClienteDTOs> ListarCLientes()
+        {
+            var clientes = _repository.ListarClientes();
+
+            return clientes
+            .Select(c => new ClienteDTOs
+            {
+                IdCliente = c.IdCliente,
+                Nome = c.Nome,
+                Cpf_Cnpj = c.Cpf_Cnpj,
+                Email = c.Email,
+                Endereco = c.Endereco,
+                Limite = c.Limite,
+                Telefone = c.Telefone,
+                IdEmpresa = c.IdEmpresa,
+                Empresa = c.Empresa != null ? c.Empresa.Nome : string.Empty,
+                Divida = _repository.GetDividaSync(c.IdCliente),
+            }).ToList();
+        }
+
+        public ClienteDTOs? BuscarClientePorId(int id)
+        {
+            var cliente = _repository.BuscarClientePorId(id);
+
+            if (cliente == null)
+            {
+                return null;
+            }
+
+            return new ClienteDTOs
+                {
+                    IdCliente = cliente.IdCliente,
+                    Nome = cliente.Nome,
+                    Cpf_Cnpj = cliente.Cpf_Cnpj,
+                    Email = cliente.Email,
+                    Endereco = cliente.Endereco,
+                    Limite = cliente.Limite,
+                    Telefone = cliente.Telefone,
+                    IdEmpresa = cliente.IdEmpresa,
+                    Empresa = cliente.Empresa != null
+                            ? cliente.Empresa.Nome
+                            : string.Empty,
+                    Divida = _repository.GetDividaSync(id)
+                };
+        }
     }
 }

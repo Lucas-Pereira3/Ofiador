@@ -1,10 +1,11 @@
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.Infrastructure.Repository
 {
-    public class ClienteRepository
+    public class ClienteRepository : IClienteRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -84,6 +85,39 @@ namespace Ofiador.Infrastructure.Repository
             return await _context.CompraParcelas
                 .Where(p => p.Fatura.IdCliente == idCliente && !p.Pago)
                 .SumAsync(p => (decimal?)p.ValorParcela) ?? 0;
+        }
+
+        public bool PossuiFaturaAberta(int idCliente)
+        {
+            return _context.Faturas.Any(f => f.IdCliente == idCliente && f.Status != "PAGO");
+        }
+
+        public List<Cliente> ListarClientes()
+        {
+            return _context.Clientes
+                .Include(c => c.Empresa)
+                .Include(c => c.Faturas)
+                .ThenInclude(f => f.CompraParcelas)
+                .ToList();
+        }
+
+        public Cliente? BuscarClientePorId(int id)
+        {
+            return _context.Clientes
+                 .Include(c => c.Empresa)
+                .Include(c => c.Faturas)
+                .ThenInclude(f => f.CompraParcelas)
+                .FirstOrDefault(c => c.IdCliente == id);
+        }
+
+        public decimal GetDividaSync(int idCliente)
+        {
+            return _context.CompraParcelas
+                .Where(p =>
+                    p.Fatura.IdCliente == idCliente &&
+                    !p.Pago)
+                .Sum(p =>
+                    (decimal?)p.ValorParcela) ?? 0;
         }
     }
 }

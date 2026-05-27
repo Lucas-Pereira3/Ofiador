@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ofiador.Application.Interfaces;
 using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
 using Ofiador.Infrastructure.Repository;

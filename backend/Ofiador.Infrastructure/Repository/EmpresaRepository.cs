@@ -1,9 +1,10 @@
 ﻿using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.Infrastructure.Repository
 {
-    public class EmpresaRepository
+    public class EmpresaRepository : IEmpresaRepository
     {
         private readonly ApplicationDbContext _context;
 
