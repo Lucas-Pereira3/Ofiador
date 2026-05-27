@@ -7,8 +7,6 @@ import {
   UserPlusIcon,
   ExclamationTriangleIcon,
   ShoppingCartIcon,
-  CalendarIcon,
-  CurrencyDollarIcon,
   ReceiptPercentIcon,
 } from "@heroicons/react/24/outline";
 import Select from "react-select";
@@ -106,39 +104,53 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const errors = {};
 
     if (!formData.nome.trim()) {
-      newErrors.nome = "Nome é obrigatório";
+      errors.nome = "Nome é obrigatório";
     } else if (formData.nome.length < 3) {
-      newErrors.nome = "Nome deve ter pelo menos 3 caracteres";
+      errors.nome = "Nome deve ter pelo menos 3 caracteres";
     }
 
     if (!formData.cpf_Cnpj.trim()) {
-      newErrors.cpf_Cnpj = "CPF é obrigatório";
+      errors.cpf_Cnpj = "CPF é obrigatório";
     } else {
       const cpfClean = formData.cpf_Cnpj.replace(/[^\d]/g, "");
 
       if (cpfClean.length !== 11) {
-        newErrors.cpf_Cnpj = "CPF deve ter 11 dígitos";
+        errors.cpf_Cnpj = "CPF deve ter 11 dígitos";
       } else if (!validateCPF(formData.cpf_Cnpj)) {
-        newErrors.cpf_Cnpj = "CPF inválido";
+        errors.cpf_Cnpj = "CPF inválido";
       }
     }
 
+    if (!formData.telefone.trim()) {
+      errors.telefone = "Telefone é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email é obrigatório";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Email inválido";
+    }
+
+    if (!formData.endereco.trim()) {
+      errors.endereco = "Endereço é obrigatório";
+    }
+
     if (!formData.limite) {
-      newErrors.limite = "Limite de crédito é obrigatório";
+      errors.limite = "Limite de crédito é obrigatório";
     } else if (parseFloat(formData.limite) <= 0) {
-      newErrors.limite = "Limite de crédito deve ser maior que zero";
+      errors.limite = "Limite de crédito deve ser maior que zero";
     }
 
     if (!formData.idEmpresa) {
-      newErrors.idEmpresa = "Empresa é obrigatória";
+      errors.idEmpresa = "Empresa é obrigatória";
     }
 
-    setErrors(newErrors);
+    setErrors(errors);
 
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -151,11 +163,11 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
     setLoading(true);
     try {
       const clienteData = {
-        nome: formData.nome,
+        nome: formData.nome.trim(),
         cpf_Cnpj: formData.cpf_Cnpj.replace(/[^\d]/g, ""),
         telefone: formData.telefone.replace(/[^\d]/g, ""),
-        email: formData.email,
-        endereco: formData.endereco,
+        email: formData.email.trim(),
+        endereco: formData.endereco.trim(),
         limite: parseFloat(formData.limite),
         idEmpresa: parseInt(formData.idEmpresa),
       };
@@ -244,6 +256,8 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
           onChange={handleChange}
           placeholder="(00) 00000-0000"
           maxLength={15}
+          error={errors.telefone}
+          required
         />
         <Input
           label="Email"
@@ -251,12 +265,16 @@ const ClienteRapidoModal = ({ isOpen, onClose, onClienteCriado, empresas }) => {
           type="email"
           value={formData.email}
           onChange={handleChange}
+          error={errors.email}
+          required
         />
         <Input
           label="Endereço"
           name="endereco"
           value={formData.endereco}
           onChange={handleChange}
+          error={errors.endereco}
+          required
         />
         <Input
           label="Limite de Crédito"
@@ -1007,15 +1025,44 @@ const Compras = () => {
                 <label className="input-label">Nº de Parcelas *</label>
                 <input
                   type="number"
+                  min={1}
+                  max={24}
                   name="parcelas"
                   value={formData.parcelas}
-                  onChange={handleChange}
-                  min="1"
-                  max="24"
+                  onChange={(e) => {
+                    let valor = e.target.value;
+
+                    valor = valor.replace(/^0+/, "");
+
+                    if (valor === "") {
+                      setFormData({
+                        ...formData,
+                        parcelas: "",
+                      });
+                      return;
+                    }
+
+                    const numero = parseInt(valor);
+
+                    if (numero > 24) {
+                      toast.error("O número máximo de parcelas é 24");
+                      return;
+                    }
+
+                    setFormData({
+                      ...formData,
+                      parcelas: valor,
+                    });
+                  }}
                   className={`input ${
-                    formErrors.parcelas ? "border-danger" : ""
+                    formErrors.parcelas ? "border-danger focus:ring-danger" : ""
                   }`}
                 />
+                {formData.parcelas > 24 && (
+                  <p className="mt-1 text-sm text-danger">
+                    O número máximo permitido é 24 parcelas.
+                  </p>
+                )}
                 {formErrors.parcelas && (
                   <p className="input-error">{formErrors.parcelas}</p>
                 )}

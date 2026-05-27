@@ -11,7 +11,6 @@ import {
   UserIcon,
   PhoneIcon,
   EnvelopeIcon,
-  MapPinIcon,
   BuildingOfficeIcon,
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
@@ -171,37 +170,51 @@ const Clientes = () => {
   };
 
   const validateForm = () => {
-    const errors = {};
+    const newErrors = {};
 
     if (!formData.nome.trim()) {
-      errors.nome = "Nome é obrigatório";
+      newErrors.nome = "Nome é obrigatório";
     } else if (formData.nome.length < 3) {
-      errors.nome = "Nome deve ter pelo menos 3 caracteres";
+      newErrors.nome = "Nome deve ter pelo menos 3 caracteres";
     }
 
     if (!formData.cpf_Cnpj.trim()) {
-      errors.cpf_Cnpj = "CPF é obrigatório";
+      newErrors.cpf_Cnpj = "CPF é obrigatório";
     } else {
       const cpfClean = formData.cpf_Cnpj.replace(/[^\d]/g, "");
+
       if (cpfClean.length !== 11) {
-        errors.cpf_Cnpj = "CPF deve ter 11 dígitos";
+        newErrors.cpf_Cnpj = "CPF deve ter 11 dígitos";
       } else if (!validateCPF(formData.cpf_Cnpj)) {
-        errors.cpf_Cnpj = "CPF inválido";
+        newErrors.cpf_Cnpj = "CPF inválido";
       }
     }
 
+    if (!formData.telefone.trim()) {
+      newErrors.telefone = "Telefone é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email é obrigatório";
+    }
+
+    if (!formData.endereco.trim()) {
+      newErrors.endereco = "Endereço é obrigatório";
+    }
+
     if (!formData.limite) {
-      errors.limite = "Limite de crédito é obrigatório";
+      newErrors.limite = "Limite de crédito é obrigatório";
     } else if (parseFloat(formData.limite) <= 0) {
-      errors.limite = "Limite de crédito deve ser maior que zero";
+      newErrors.limite = "Limite de crédito deve ser maior que zero";
     }
 
     if (!formData.idEmpresa) {
-      errors.idEmpresa = "Empresa é obrigatória";
+      newErrors.idEmpresa = "Empresa é obrigatória";
     }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
@@ -214,6 +227,9 @@ const Clientes = () => {
     } else if (name === "telefone") {
       const formatted = formatTelefone(value);
       setFormData({ ...formData, [name]: formatted });
+    }
+    if (formErrors.telefone) {
+      setFormErrors({ ...formErrors, telefone: null });
     } else if (name === "limite") {
       const numValue = value.replace(/[^\d,]/g, "").replace(",", ".");
       setFormData({ ...formData, [name]: numValue });
@@ -250,9 +266,9 @@ const Clientes = () => {
       const clienteData = {
         nome: formData.nome.trim(),
         cpf_Cnpj: formData.cpf_Cnpj.replace(/[^\d]/g, ""),
-        telefone: formData.telefone?.replace(/[^\d]/g, "") || null,
-        email: formData.email || null,
-        endereco: formData.endereco || null,
+        telefone: formData.telefone.replace(/[^\d]/g, ""),
+        email: formData.email.trim(),
+        endereco: formData.endereco.trim(),
         limite: parseFloat(formData.limite),
         idEmpresa: parseInt(formData.idEmpresa),
       };
@@ -313,7 +329,9 @@ const Clientes = () => {
       setShowDeleteModal(false);
       setClienteToDelete(null);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Erro ao excluir cliente");
+      toast.error(
+        error.response?.data?.message || "Cliente possui dívidas pendentes"
+      );
     }
   };
 
@@ -664,6 +682,7 @@ const Clientes = () => {
             placeholder="(00) 00000-0000"
             maxLength={15}
             error={formErrors.telefone}
+            required
           />
           <Input
             label="Email"
@@ -673,6 +692,7 @@ const Clientes = () => {
             onChange={handleChange}
             placeholder="cliente@email.com"
             error={formErrors.email}
+            required
           />
           <Input
             label="Endereço"
@@ -681,6 +701,7 @@ const Clientes = () => {
             onChange={handleChange}
             placeholder="Digite o endereço completo"
             error={formErrors.endereco}
+            required
           />
           <Input
             label="Limite de Crédito"

@@ -15,7 +15,6 @@ import Button from "../components/ui/Button";
 import Card, { CardBody } from "../components/ui/Card";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
-import Badge from "../components/ui/Badge";
 
 const Empresas = () => {
   const [empresas, setEmpresas] = useState([]);
@@ -178,6 +177,13 @@ const Empresas = () => {
     if (!formData.endereco.trim()) {
       errors.endereco = "Endereço é obrigatório";
     }
+    if (!formData.telefone.trim()) {
+      errors.telefone = "Telefone é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email é obrigatório";
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -189,14 +195,20 @@ const Empresas = () => {
     if (name === "cnpj") {
       const formatted = formatCNPJ(value);
       setFormData({ ...formData, [name]: formatted });
+
       if (formErrors.cnpj) {
         setFormErrors({ ...formErrors, cnpj: null });
       }
     } else if (name === "telefone") {
       const formatted = formatTelefone(value);
       setFormData({ ...formData, [name]: formatted });
+
+      if (formErrors.telefone) {
+        setFormErrors({ ...formErrors, telefone: null });
+      }
     } else {
       setFormData({ ...formData, [name]: value });
+
       if (formErrors[name]) {
         setFormErrors({ ...formErrors, [name]: null });
       }
@@ -217,9 +229,9 @@ const Empresas = () => {
       const empresaData = {
         nome: formData.nome.trim(),
         cnpj: formData.cnpj.replace(/[^\d]/g, ""),
-        endereco: formData.endereco.trim() || null,
-        telefone: formData.telefone?.replace(/[^\d]/g, "") || null,
-        email: formData.email || null,
+        endereco: formData.endereco.trim(),
+        telefone: formData.telefone.replace(/[^\d]/g, ""),
+        email: formData.email.trim(),
       };
 
       if (editingEmpresa) {
@@ -277,7 +289,10 @@ const Empresas = () => {
       setShowDeleteModal(false);
       setEmpresaToDelete(null);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Erro ao excluir empresa");
+      toast.error(
+        error.response?.data?.message ||
+          "Empresa possui clientes com dívidas pendentes"
+      );
     }
   };
 
@@ -550,6 +565,8 @@ const Empresas = () => {
             onChange={handleChange}
             placeholder="(00) 00000-0000"
             maxLength={15}
+            error={formErrors.telefone}
+            required
           />
           <Input
             label="Email"
@@ -558,6 +575,8 @@ const Empresas = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="contato@empresa.com"
+            error={formErrors.email}
+            required
           />
         </form>
       </Modal>
