@@ -1,4 +1,4 @@
-﻿using Ofiador.Infrastructure.Repository;
+﻿using Ofiador.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
@@ -8,14 +8,12 @@ namespace Ofiador.Application.Services
 {
     public class PagamentoService
     {
-        private readonly PagamentoRepository _repository;
+        private readonly IPagamentoRepository _repository;
 
-        private readonly ApplicationDbContext _context;
-        public PagamentoService(PagamentoRepository repository, ApplicationDbContext context)
+        public PagamentoService(IPagamentoRepository repository)
         {
             _repository = repository;  
 
-            _context = context;
         }
 
         public Pagamento PagarParcela(int idParcela, string metodoPagamento)
@@ -61,11 +59,11 @@ namespace Ofiador.Application.Services
             //verificar se todas as parcelas da fatura foram pagas
             var parcelasPendentes = _repository.ExisteParcelasPendentes(parcela.IdFatura);
 
-            var totalParcelas = _context.CompraParcelas.Count(cp => cp.IdFatura == parcela.IdFatura);
+            var totalParcelas = _repository.TotalParcelasFatura( parcela.IdFatura);
 
-            var parcelasPagas = _context.CompraParcelas.Count(cp => cp.IdFatura == parcela.IdFatura && cp.Pago);
+            var parcelasPagas = _repository.TotalParcelasPagas(parcela.IdFatura);
 
-            if(parcelasPagas == 0)
+            if (parcelasPagas == 0)
             {
                 parcela.Fatura.Status = "PENDENTE";
             }
