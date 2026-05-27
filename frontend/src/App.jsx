@@ -83,7 +83,31 @@ function App() {
       <CssBaseline />
       <Router>
         <AuthProvider>
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                fontSize: "14px",
+                padding: "10px 14px",
+                minHeight: "45px",
+                borderRadius: "10px",
+                maxWidth: "320px",
+              },
+              success: {
+                style: {
+                  background: "#ECFDF5",
+                  color: "#065F46",
+                },
+              },
+              error: {
+                style: {
+                  background: "#FEF2F2",
+                  color: "#991B1B",
+                },
+              },
+            }}
+          />
           <AppRoutes />
         </AuthProvider>
       </Router>

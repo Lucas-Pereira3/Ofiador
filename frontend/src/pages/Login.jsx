@@ -164,7 +164,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="flex w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Coluna da imagem - lado esquerdo */}
         <div className="hidden lg:block lg:w-1/2 relative bg-gray-200">
           {sideImage ? (
@@ -191,7 +191,7 @@ const Login = () => {
         </div>
 
         {/* Coluna do formulário - lado direito */}
-        <div className="w-full lg:w-1/2 p-8 lg:p-10 pt-6 overflow-y-auto">
+        <div className="w-full lg:w-1/2 p-6 lg:p-8 pt-4 overflow-y-auto">
           <div className="flex justify-center -mt-8 mb-2">
             {logo ? (
               <img src={logo} alt="Logo" className="w-38 h-38 object-contain" />
@@ -225,7 +225,7 @@ const Login = () => {
                   value={formData.nome}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`input mt-1 w-full ${
+                  className={`input mt-1 w-full py-3 text-base rounded-xl ${
                     showNomeError || showNomeEmptyError
                       ? "border-red-500 focus:ring-red-500"
                       : formData.nome !== "" && isNomeValid
@@ -261,7 +261,7 @@ const Login = () => {
                     handleSubmit(e);
                   }
                 }}
-                className={`input mt-1 w-full ${
+                className={`input mt-1 w-full py-3 text-base rounded-xl ${
                   showEmailError || showEmailEmptyError
                     ? "border-red-500 focus:ring-red-500"
                     : formData.email !== "" && isEmailValid
@@ -301,7 +301,7 @@ const Login = () => {
                       handleSubmit(e);
                     }
                   }}
-                  className={`input w-full pr-10 ${
+                  className={`input w-full pr-10 py-3 text-base rounded-xl ${
                     showSenhaEmptyError || showSenhaError
                       ? "border-red-500 focus:ring-red-500"
                       : formData.senha !== "" && !showSenhaError
@@ -314,7 +314,11 @@ const Login = () => {
                   onClick={handleClickShowPassword}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <Visibility /> : <VisibilityOff />}
+                  {showPassword ? (
+                    <Visibility style={{ fontSize: 18 }} />
+                  ) : (
+                    <VisibilityOff style={{ fontSize: 18 }} />
+                  )}
                 </button>
               </div>
 
@@ -376,7 +380,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="btn-primary w-full"
+              className="btn-primary w-full py-3 px-4 text-base rounded-lg"
               disabled={
                 (!isLogin && !isNomeValid && formData.nome !== "") ||
                 (!isLogin && !isPasswordValid && formData.senha !== "")

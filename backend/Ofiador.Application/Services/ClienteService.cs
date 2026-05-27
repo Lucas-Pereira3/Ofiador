@@ -163,7 +163,7 @@ namespace Ofiador.Application.Services
 
         //Criar Cliente
         public(bool sucesso, string mensagem)CriarCliente(Cliente cliente){
-            cliente.Email = cliente.Email.Trim().ToLower();
+            cliente.Email = cliente.Email?.Trim().ToLower();
 
             cliente.Cpf_Cnpj = Regex.Replace(cliente.Cpf_Cnpj, @"[^\d]","");
 
@@ -194,7 +194,7 @@ namespace Ofiador.Application.Services
 
              if (DocumentoExiste(cliente.Cpf_Cnpj))
             {
-                return (false,"Já existe cliente com esse documento");
+                return (false,"Já existe cliente com esse CPF");
             }
 
             if (!EmailValido(cliente.Email))
@@ -242,7 +242,7 @@ namespace Ofiador.Application.Services
                 return(false,"Cliente não encontrado");
             }
 
-            clienteAtualizado.Email=clienteAtualizado.Email.Trim().ToLower();
+            clienteAtualizado.Email=clienteAtualizado.Email?.Trim().ToLower();
 
             clienteAtualizado.Cpf_Cnpj= Regex.Replace(clienteAtualizado.Cpf_Cnpj, @"[^\d]","");
 
