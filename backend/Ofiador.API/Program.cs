@@ -78,21 +78,20 @@ builder.Services.AddCors(options =>
 });
 // ================= SERVICES =================
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<CompraService>();
 builder.Services.AddScoped<PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
 builder.Services.AddScoped<RelatorioService>();
-//================= Interfaces =================
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
-builder.Services.AddScoped<IClienteService ,ClienteService>();
 builder.Services.AddScoped<IJwt, Jwt>();
 //================= Repositorys =================
-builder.Services.AddScoped<CompraRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<ICompraRepository ,CompraRepository>();
 builder.Services.AddScoped<IEmpresaRepository , EmpresaRepository>();
 builder.Services.AddScoped<FaturaRepository>();
-builder.Services.AddScoped<PagamentoRepository>();
+builder.Services.AddScoped<IPagamentoRepository ,PagamentoRepository>();
 builder.Services.AddScoped<RelatorioRepository>();
 //====================== JWT ========================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

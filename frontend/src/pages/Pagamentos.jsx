@@ -7,9 +7,6 @@ import {
   DocumentTextIcon,
   CreditCardIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon,
-  CalendarIcon,
-  UserIcon,
 } from "@heroicons/react/24/outline";
 import Select from "react-select";
 import Button from "../components/ui/Button";
@@ -483,6 +480,8 @@ const Pagamentos = () => {
     } else {
       setClienteSelecionado(null);
       setFaturaSelecionadaForm(null);
+      setParcelaSelecionada("todas");
+      setValorPago("");
     }
   };
 
@@ -949,16 +948,13 @@ const Pagamentos = () => {
             </div>
 
             <div>
-              <label className="input-label">Valor Pago *</label>
+              <label className="input-label">Valor a Pagar *</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  R$
-                </span>
                 <input
                   type="text"
                   value={formatCurrency(parseFloat(valorPago || 0))}
                   readOnly
-                  className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50"
+                  className="w-full pl-3 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50"
                 />
               </div>
             </div>

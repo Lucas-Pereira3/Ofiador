@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.Infrastructure.Repository
 {
-    public class PagamentoRepository
+    public class PagamentoRepository : IPagamentoRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -33,6 +34,15 @@ namespace Ofiador.Infrastructure.Repository
             _context.SaveChanges();
         }
 
+        public int TotalParcelasFatura(int idFatura)
+        {
+            return _context.CompraParcelas.Count(cp => cp.IdFatura == idFatura);
+        }
+
+        public int TotalParcelasPagas(int idFatura)
+        {
+            return _context.CompraParcelas.Count(cp =>cp.IdFatura == idFatura && cp.Pago);
+        }
         //salvar Alterações
         public void Salvar()
         {
