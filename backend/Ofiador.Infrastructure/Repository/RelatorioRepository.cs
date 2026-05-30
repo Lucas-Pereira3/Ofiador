@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Infrastructure.Interfaces;
 
 namespace Ofiador.API.Repositories
 {
-    public class RelatorioRepository
+    public class RelatorioRepository : IRelatorioRepository
     {
         private readonly ApplicationDbContext _context;
 

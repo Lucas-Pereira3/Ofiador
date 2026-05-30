@@ -105,5 +105,59 @@ namespace Ofiador.Test.UnitTests.Controllers
 
             Assert.IsType<UnauthorizedObjectResult>(result);
         }
+
+        //400 - Dados inválidos
+        [Fact]
+        public void Register_DeveRetornarBadRequest()
+        {
+            var dto = new AuthDTO
+            {
+                Nome = "",
+                Login = "emailinvalido",
+                Senha = "123"
+            };
+
+            var result = _controller.Register(dto);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        //409 - Email já cadastrado
+        [Fact]
+        public void Register_DeveRetornarConflict()
+        {
+            var dto = new AuthDTO
+            {
+                Nome = "Pedro",
+                Login = "teste@gmail.com",
+                Senha = "Senha@123"
+            };
+
+            _repositoryMock.Setup(r => r.EmailExiste(dto.Login)).Returns(true);
+
+            var result = _controller.Register(dto);
+
+            Assert.IsType<ConflictObjectResult>(result);
+        }
+
+        //201 - Usuário criado
+        [Fact]
+        public void Register_DeveRetornarCreated()
+        {
+            var dto = new AuthDTO
+            {
+                Nome = "Pedro",
+                Login = "teste@gmail.com",
+                Senha = "Senha@123"
+            };
+
+            _repositoryMock.Setup(r => r.EmailExiste(dto.Login)).Returns(false);
+
+            var result = _controller.Register(dto);
+
+            Assert.IsType<CreatedResult>(result);
+        }
+
+        //
     }
 }

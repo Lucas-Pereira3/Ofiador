@@ -2,6 +2,7 @@
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Infrastructure.Interfaces;
+using Ofiador.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -10,7 +11,7 @@ using System.Text;
 namespace Ofiador.Application.Services
 {
     
-    public class CompraService
+    public class CompraService : ICompraService
     {
         private readonly ICompraRepository _repository;
 
@@ -66,7 +67,7 @@ namespace Ofiador.Application.Services
                 throw new Exception("Valor da compra deve ser maior que zero");
             }
 
-            if(compra.Parcelas == 0 || compra.Parcelas >= 24)
+            if(compra.Parcelas == 0 || compra.Parcelas > 24)
             {
                 throw new Exception("Quantidade de parcelas inválida");
             }

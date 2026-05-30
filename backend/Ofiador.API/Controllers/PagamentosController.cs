@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Application.Services;
+using Ofiador.Application.Interfaces;
 using Ofiador.Application.DTOs;
 namespace Ofiador.API.Controllers
 {
@@ -15,9 +16,9 @@ namespace Ofiador.API.Controllers
     public class PagamentosController: ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly PagamentoService _pagamentoService;
+        private readonly IPagamentoService _pagamentoService;
 
-        public PagamentosController(ApplicationDbContext context, PagamentoService pagamentoService)
+        public PagamentosController(ApplicationDbContext context, IPagamentoService pagamentoService)
         {
             _context = context;
             _pagamentoService = pagamentoService;

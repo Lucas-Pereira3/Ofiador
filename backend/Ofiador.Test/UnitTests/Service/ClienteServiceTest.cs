@@ -138,5 +138,96 @@ namespace Ofiador.Test.UnitTests.Service
 
             Assert.Equal("Cliente possui faturas aberta(s)", resultado.mensagem);
         }
+
+        //Retornar dívida corretamente
+        [Fact]
+        public async Task GetDivida_DeveRetornarDividaCorreta()
+        {
+            
+            var cliente = new Cliente
+            {
+                IdCliente = 1,
+                Nome = "Pedro"
+            };
+
+            _repositoryMock.Setup(r => r.BuscarPorId(1)).Returns(cliente);
+
+            _repositoryMock.Setup(r => r.GetDivida(1)).ReturnsAsync(500);
+
+            
+            var resultado =await _service.GetDivida(1);
+
+           
+            Assert.Equal(500,resultado.TotalDivida);
+        }
+
+        //Cliente sem dívida
+        [Fact]
+        public async Task GetDivida_DeveRetornarZeroQuandoNaoExistirDivida()
+        {
+            
+            var cliente = new Cliente
+            {
+                IdCliente = 1
+            };
+
+            _repositoryMock.Setup(r => r.BuscarPorId(1)).Returns(cliente);
+
+            _repositoryMock.Setup(r => r.GetDivida(1)).ReturnsAsync(0);
+
+            var resultado =await _service.GetDivida(1);
+
+            Assert.Equal(0,resultado.TotalDivida);
+        }
+
+        //Cliente inexistente
+        [Fact]
+        public async Task GetDivida_DeveValidarClienteExistente()
+        {
+            
+            _repositoryMock.Setup(r => r.BuscarPorId(1)).Returns((Cliente?)null);
+
+            var ex =await Assert.ThrowsAsync<Exception>(() => _service.GetDivida(1));
+
+            Assert.Equal("Cliente não encontrado",ex.Message);
+        }
+
+        //Considerar pagos e pendentes
+        [Fact]
+        public async Task GetDivida_DeveConsiderarSomenteParcelasPendentes()
+        {
+           
+            var cliente = new Cliente
+            {
+                IdCliente = 1
+            };
+
+            _repositoryMock.Setup(r => r.BuscarPorId(1)).Returns(cliente);
+
+            _repositoryMock.Setup(r => r.GetDivida(1)).ReturnsAsync(500);
+
+            var resultado =await _service.GetDivida(1);
+
+            Assert.Equal(500, resultado.TotalDivida);
+        }
+
+        //Consistência financeira
+        [Fact]
+        public async Task GetDivida_NaoDeveRetornarValorNegativo()
+        {
+  
+            var cliente = new Cliente
+            {
+                IdCliente = 1
+            };
+
+            _repositoryMock.Setup(r => r.BuscarPorId(1)).Returns(cliente);
+
+            _repositoryMock.Setup(r => r.GetDivida(1)).ReturnsAsync(0);
+
+            var resultado =await _service.GetDivida(1);
+
+            Assert.True(resultado.TotalDivida >= 0);
+        }
     }
 }

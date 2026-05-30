@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Ofiador.Application.Services;
+using Ofiador.Application.Interfaces;
 
 namespace Ofiador.API.Controllers
 {
@@ -7,9 +7,9 @@ namespace Ofiador.API.Controllers
     [Route("relatorios")]
     public class RelatoriosAReceberController : ControllerBase
     {
-        private readonly RelatorioService _service;
+        private readonly IRelatorioService _service;
 
-        public RelatoriosAReceberController(RelatorioService service)
+        public RelatoriosAReceberController(IRelatorioService service)
         {
             _service = service;
         }

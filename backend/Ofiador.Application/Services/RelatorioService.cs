@@ -1,13 +1,15 @@
 using Ofiador.Application.DTOs;
 using Ofiador.API.Repositories;
+using Ofiador.Infrastructure.Interfaces;
+using Ofiador.Application.Interfaces;
 
 namespace Ofiador.Application.Services
 {
-    public class RelatorioService
+    public class RelatorioService : IRelatorioService
     {
-        private readonly RelatorioRepository _repository;
+        private readonly IRelatorioRepository _repository;
 
-        public RelatorioService(RelatorioRepository repository)
+        public RelatorioService(IRelatorioRepository repository)
         {
             _repository = repository;
         }

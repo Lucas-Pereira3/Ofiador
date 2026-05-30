@@ -88,7 +88,7 @@ Ofiador/
 │       ├── UnitTests/
 |		|	├── Services
 |		|	├── Controllers
-│       └── IntegrationTests/
+│       
 │
 ├── frontend/
 │   ├── src/
@@ -264,6 +264,69 @@ Testes de autenticação JWT
 Testes de validação
 Testes de relatórios
 Executar testes
+
+Seção de Testes Unitários 
+
+Requisitos
+- .NET SDK 10 instalado (dotnet)
+- Dependências restauradas (dotnet restore)
+
+Estrutura dos projetos de teste
+
+Os projetos de teste estão localizados dentro da pasta backend/Tests. A convenção usada é separar em UnitTests e IntegrationTests para facilitar execução e organização:
+
+- backend/Tests/UnitTests  -> Testes unitários (xUnit)
+
+
+Executando os testes localmente
+
+1) Restaurar dependências (opcional, recomendado):
+
+   dotnet restore
+
+2) Executar todos os testes da solução (se existir um arquivo .sln na pasta backend):
+
+   cd backend
+   dotnet test ./Ofiador.sln
+
+3) Executar testes em um projeto específico (exemplo):
+
+   dotnet test ./backend/Tests/UnitTests/UnitTests.csproj
+  
+
+Observação: adapte os caminhos acima conforme o nome exato dos projetos de teste no repositório. Se não existir a solução, a opção mais segura é executar dotnet test apontando para cada arquivo .csproj de teste.
+
+Comandos e opções úteis
+
+- Executar e mostrar resultados em modo detalhado:
+  dotnet test --verbosity normal
+- Executar testes específicos (filtrando por nome):
+  dotnet test --filter "FullyQualifiedName=Namespace.TestClass.TestMethod"
+- Gerar saída de resultado em arquivo TRX (compatível com integrações CI):
+  dotnet test --logger "trx;LogFileName=TestResults.trx"
+
+Executando testes dentro do container Docker (se estiver usando Docker Compose)
+
+Se os serviços estiverem subidos via Docker Compose, é possível executar os testes dentro do container da aplicação backend:
+
+   docker exec -it ofiador_backend dotnet test
+
+Isso executa os testes no ambiente do container (útil para garantir que as dependências e configurações do container estão corretas).
+
+Dependências / Frameworks usados nos testes
+
+- xUnit -> framework principal de testes
+- dotnet test -> executor de testes do .NET
+- Ferramentas de CI podem consumir o arquivo TRX gerado pelo logger acima
+
+Boas práticas
+
+- Execute os testes unitários com frequência durante o desenvolvimento.
+- Separe testes rápidos (unitários) de testes mais lentos (integração) para otimizar pipelines CI.
+- Sempre verifique se as migrations e o banco (ou mocks) estão configurados antes de rodar testes de integração.
+
+Executar testes
+
 dotnet test
 Fluxo do Sistema
 Frontend → API → Services → Repositories → PostgreSQL
