@@ -5,6 +5,7 @@ using Ofiador.Application.DTOs;
 using Ofiador.Application.Services;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Data;
+using Ofiador.Application.Interfaces;
 using System.Linq.Expressions;
 namespace Ofiador.API.Controllers
 {
@@ -13,11 +14,11 @@ namespace Ofiador.API.Controllers
     [Route("api/[controller]")]
     public class ComprasController : ControllerBase
     {
-        private readonly CompraService _compraService;
+        private readonly ICompraService _compraService;
 
         private readonly ApplicationDbContext _context;
 
-        public ComprasController(CompraService compraservice, ApplicationDbContext context)
+        public ComprasController(ICompraService compraservice, ApplicationDbContext context)
         {
             _compraService = compraservice;
             _context = context;
