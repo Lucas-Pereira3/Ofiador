@@ -356,5 +356,68 @@ namespace Ofiador.Test.UnitTests.Services
                     Assert.NotNull(parcela.DataPagamento);
                 });
         }
+
+        //Calcular valor Pagdo da fatura Corretamente
+        [Fact]
+        public void PagarFatura_DeveCalcularValorPagoCorretamente()
+        {
+            var compra = new Compra();
+
+            var parcela1 = new CompraParcela
+            {
+                Pago = false,
+                ValorParcela = 100,
+                Compra = compra
+            };
+
+            var parcela2 = new CompraParcela
+            {
+                Pago = false,
+                ValorParcela = 150,
+                Compra = compra
+            };
+
+            var fatura = new Fatura
+            {
+                IdFatura = 1,
+                Status = "PENDENTE",
+                CompraParcelas =
+                [
+                    parcela1,
+                    parcela2
+                ]
+            };
+
+            _repositoryMock.Setup(r => r.BuscarFatura(1)).Returns(fatura);
+
+            var pagamento = _service.PagarFatura(1, "PIX");
+
+            Assert.Equal(250, pagamento.ValorPago);
+        }
+
+        //Calcular valor  Correto da Parcela paga
+        [Fact]
+        public void PagarParcela_DeveRegistrarValorCorreto()
+        {
+            var parcela = new CompraParcela
+            {
+                idCompraParcela = 1,
+                ValorParcela = 200,
+                Pago = false,
+                Compra = new Compra(),
+                Fatura = new Fatura(),
+                IdFatura = 1
+            };
+
+            _repositoryMock.Setup(r => r.BuscarParcela(1)).Returns(parcela);
+
+            _repositoryMock.Setup(r => r.TotalParcelasFatura(1)).Returns(1);
+
+            _repositoryMock.Setup(r => r.TotalParcelasPagas(1)).Returns(1);
+
+            var pagamento =_service.PagarParcela(1, "PIX");
+
+            Assert.Equal(200, pagamento.ValorPago);
+        }
     }
 }

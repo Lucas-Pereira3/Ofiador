@@ -691,7 +691,7 @@ namespace Ofiador.Test.UnitTests.Service
                 IdCliente = 1,
                 IdEmpresa = 1,
                 Valor_Total = 500,
-                Parcelas = 24
+                Parcelas = 25
             };
 
             _repositoryMock

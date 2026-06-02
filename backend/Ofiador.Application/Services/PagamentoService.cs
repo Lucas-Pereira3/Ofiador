@@ -4,9 +4,10 @@ using Ofiador.Infrastructure.Data;
 using Ofiador.Domain.Entities;
 using Ofiador.Infrastructure.Migrations;
 using Ofiador.Application.DTOs;
+using Ofiador.Application.Interfaces;
 namespace Ofiador.Application.Services
 {
-    public class PagamentoService
+    public class PagamentoService : IPagamentoService
     {
         private readonly IPagamentoRepository _repository;
 
