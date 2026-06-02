@@ -6,6 +6,14 @@ namespace Ofiador.Infrastructure.Interfaces
     {
         Task<List<Fatura>> GetContasReceber(
             DateTime? dataInicial,
-            DateTime? dataFinal);
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId);
+
+        Task<List<Fatura>> GetContasPagas(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId);
     }
 }

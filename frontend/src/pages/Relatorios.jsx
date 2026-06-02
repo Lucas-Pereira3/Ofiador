@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   DocumentTextIcon,
   BanknotesIcon,
@@ -13,132 +13,8 @@ import {
 import Button from "../components/ui/Button";
 import Card, { CardBody, CardHeader } from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
+import api from "../services/api";
 
-// Dados Mock
-const empresasMock = [
-  { id: 1, nome: "Loja A" },
-  { id: 2, nome: "Loja B" },
-  { id: 3, nome: "Loja C" },
-  { id: 4, nome: "Loja D" },
-];
-
-const clientesMock = [
-  { id: 1, nome: "Astolfo", cpf: "123.456.789-00", empresaId: 1 },
-  { id: 2, nome: "Pedro Silva", cpf: "987.654.321-00", empresaId: 2 },
-  { id: 3, nome: "Marcos Oliveira", cpf: "456.789.123-00", empresaId: 3 },
-  { id: 4, nome: "Ana Costa", cpf: "789.123.456-00", empresaId: 1 },
-  { id: 5, nome: "Carlos Souza", cpf: "321.654.987-00", empresaId: 2 },
-];
-
-const dadosContasAReceber = [
-  {
-    id: 1,
-    cliente: "Astolfo",
-    clienteId: 1,
-    empresa: "Loja A",
-    empresaId: 1,
-    totalDivida: 2500,
-    valorPago: 0,
-    valorRestante: 2500,
-    proximoVencimento: "2026-01-15",
-    diasAtraso: 8,
-    status: "atrasada",
-  },
-  {
-    id: 2,
-    cliente: "Pedro Silva",
-    clienteId: 2,
-    empresa: "Loja B",
-    empresaId: 2,
-    totalDivida: 5000,
-    valorPago: 1000,
-    valorRestante: 4000,
-    proximoVencimento: "2026-01-20",
-    diasAtraso: 3,
-    status: "atrasada",
-  },
-  {
-    id: 3,
-    cliente: "Marcos Oliveira",
-    clienteId: 3,
-    empresa: "Loja C",
-    empresaId: 3,
-    totalDivida: 10000,
-    valorPago: 2500,
-    valorRestante: 7500,
-    proximoVencimento: "2026-02-01",
-    diasAtraso: 0,
-    status: "pendente",
-  },
-  {
-    id: 4,
-    cliente: "Ana Costa",
-    clienteId: 4,
-    empresa: "Loja A",
-    empresaId: 1,
-    totalDivida: 3200,
-    valorPago: 0,
-    valorRestante: 3200,
-    proximoVencimento: "2026-01-10",
-    diasAtraso: 12,
-    status: "atrasada",
-  },
-  {
-    id: 5,
-    cliente: "Carlos Souza",
-    clienteId: 5,
-    empresa: "Loja B",
-    empresaId: 2,
-    totalDivida: 1800,
-    valorPago: 1800,
-    valorRestante: 0,
-    proximoVencimento: "2025-12-28",
-    diasAtraso: 0,
-    status: "paga",
-  },
-];
-
-const dadosContasPagas = [
-  {
-    id: 5,
-    cliente: "Carlos Souza",
-    clienteId: 5,
-    empresa: "Loja B",
-    empresaId: 2,
-    totalDivida: 1800,
-    valorPago: 1800,
-    valorRestante: 0,
-    proximoVencimento: "2025-12-28",
-    diasAtraso: 0,
-    status: "paga",
-  },
-  {
-    id: 6,
-    cliente: "Astolfo",
-    clienteId: 1,
-    empresa: "Loja A",
-    empresaId: 1,
-    totalDivida: 1200,
-    valorPago: 1200,
-    valorRestante: 0,
-    proximoVencimento: "2025-12-10",
-    diasAtraso: 0,
-    status: "paga",
-  },
-  {
-    id: 7,
-    cliente: "Pedro Silva",
-    clienteId: 2,
-    empresa: "Loja B",
-    empresaId: 2,
-    totalDivida: 3000,
-    valorPago: 3000,
-    valorRestante: 0,
-    proximoVencimento: "2025-12-05",
-    diasAtraso: 0,
-    status: "paga",
-  },
-];
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("pt-BR", {
@@ -149,8 +25,9 @@ const formatCurrency = (value) =>
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
-  const [ano, mes, dia] = dateString.split("-");
-  return `${dia}/${mes}/${ano}`;
+  const d = new Date(dateString);
+  if (isNaN(d)) return "-";
+  return d.toLocaleDateString("pt-BR");
 };
 
 const StatusBall = ({ diasAtraso, status }) => {
@@ -203,6 +80,66 @@ const Relatorios = () => {
   const [periodoRapido, setPeriodoRapido] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  const [dadosFiltrados, setDadosFiltrados] = useState([]);
+  const [empresas, setEmpresas] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    api.get("/api/empresa").then((r) => setEmpresas(r.data)).catch(() => {});
+    api.get("/api/cliente").then((r) => setClientes(r.data)).catch(() => {});
+  }, []);
+
+  const fetchDados = useCallback(
+    async (aba = abaSelecionada) => {
+      setLoading(true);
+      setErro(null);
+      try {
+        const params = {};
+        if (dataInicio) params.dataInicial = dataInicio;
+        if (dataFim) params.dataFinal = dataFim;
+        if (empresaId) params.empresaId = empresaId;
+        if (clienteId) params.clienteId = clienteId;
+
+        const endpointMap = {
+          receber: "/api/relatorios/contas-a-receber",
+          pagas: "/api/relatorios/contas-pagas",
+          geral: "/api/relatorios/geral",
+        };
+
+        const { data } = await api.get(endpointMap[aba], { params });
+
+        const normalized = data.map((item) => ({
+          clienteId: item.clienteId,
+          cliente: item.nome,
+          cpf: item.cpf,
+          empresaId: item.empresaId,
+          empresa: item.empresa,
+          totalDivida: item.total,
+          valorPago: item.pago,
+          valorRestante: item.restante,
+          proximoVencimento: item.proximoVencimento,
+          diasAtraso: item.diasAtraso,
+          status: item.status,
+        }));
+
+        setDadosFiltrados(normalized);
+      } catch {
+        setErro("Erro ao carregar dados. Verifique a conexão com a API.");
+        setDadosFiltrados([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [abaSelecionada, dataInicio, dataFim, empresaId, clienteId]
+  );
+
+  useEffect(() => {
+    fetchDados(abaSelecionada);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abaSelecionada]);
+
   const abas = [
     {
       id: "receber",
@@ -223,57 +160,6 @@ const Relatorios = () => {
       color: "info",
     },
   ];
-
-  const getDadosPorAba = () => {
-    if (abaSelecionada === "receber") return dadosContasAReceber;
-    if (abaSelecionada === "pagas") return dadosContasPagas;
-    return [...dadosContasAReceber, ...dadosContasPagas];
-  };
-
-  const dadosFiltrados = useMemo(() => {
-    let dados = getDadosPorAba();
-
-    // Filtro por empresa
-    if (empresaId) {
-      dados = dados.filter((item) => item.empresaId === parseInt(empresaId));
-    }
-
-    // Filtro por cliente
-    if (clienteId) {
-      dados = dados.filter((item) => item.clienteId === parseInt(clienteId));
-    }
-
-    // Filtro por data de vencimento
-    if (dataInicio && dataFim) {
-      dados = dados.filter((item) => {
-        if (!item.proximoVencimento) return false;
-        const vencimento = item.proximoVencimento;
-        return vencimento >= dataInicio && vencimento <= dataFim;
-      });
-    }
-
-    return dados;
-  }, [abaSelecionada, empresaId, clienteId, dataInicio, dataFim]);
-
-  const getTotalEmAberto = () => {
-    return dadosFiltrados.reduce((acc, d) => acc + d.valorRestante, 0);
-  };
-
-  const getTotalPago = () => {
-    return dadosFiltrados.reduce((acc, d) => acc + d.valorPago, 0);
-  };
-
-  const getTotalPendente = () => {
-    return dadosFiltrados.reduce(
-      (acc, d) =>
-        acc + (d.diasAtraso > 0 && d.status !== "paga" ? d.valorRestante : 0),
-      0
-    );
-  };
-
-  const getTotalGeral = () => {
-    return dadosFiltrados.reduce((acc, d) => acc + d.totalDivida, 0);
-  };
 
   const handlePeriodoRapido = (periodo) => {
     setPeriodoRapido(periodo);
@@ -304,92 +190,54 @@ const Relatorios = () => {
     setPeriodoRapido("");
   };
 
+  const handleAplicarFiltros = () => {
+    fetchDados(abaSelecionada);
+    setShowMobileFilters(false);
+  };
+
   const temFiltrosAtivos = empresaId || clienteId || dataInicio || dataFim;
 
   const clientesFiltrados = useMemo(() => {
-    if (!empresaId) return clientesMock;
-    return clientesMock.filter((c) => c.empresaId === parseInt(empresaId));
-  }, [empresaId]);
+    if (!empresaId) return clientes;
+    return clientes.filter((c) => c.idEmpresa === parseInt(empresaId));
+  }, [empresaId, clientes]);
 
-  const totalEmAberto = getTotalEmAberto();
-  const totalPago = getTotalPago();
-  const totalPendente = getTotalPendente();
-  const totalGeral = getTotalGeral();
+  const totalEmAberto = dadosFiltrados.reduce((acc, d) => acc + d.valorRestante, 0);
+  const totalPago = dadosFiltrados.reduce((acc, d) => acc + d.valorPago, 0);
+  const totalPendente = dadosFiltrados.reduce(
+    (acc, d) =>
+      acc + (d.diasAtraso > 0 && d.status !== "paga" ? d.valorRestante : 0),
+    0
+  );
+  const totalGeral = dadosFiltrados.reduce((acc, d) => acc + d.totalDivida, 0);
 
   const getCardInfo = () => {
     if (abaSelecionada === "receber") {
       return {
-        primary: {
-          label: "Total a Receber",
-          value: totalEmAberto,
-          color: "primary",
-        },
-        secondary: {
-          label: "Total Pendente (Atrasado)",
-          value: totalPendente,
-          color: "danger",
-        },
-        tertiary: {
-          label: "Quantidade de Faturas",
-          value: dadosFiltrados.length,
-          color: "info",
-        },
+        primary: { label: "Total a Receber", value: totalEmAberto, color: "primary" },
+        secondary: { label: "Total Pendente (Atrasado)", value: totalPendente, color: "danger" },
+        tertiary: { label: "Quantidade de Faturas", value: dadosFiltrados.length, color: "info" },
       };
     }
     if (abaSelecionada === "pagas") {
       return {
-        primary: {
-          label: "Total Recebido",
-          value: totalPago,
-          color: "success",
-        },
-        secondary: {
-          label: "Quantidade de Pagamentos",
-          value: dadosFiltrados.length,
-          color: "info",
-        },
+        primary: { label: "Total Recebido", value: totalPago, color: "success" },
+        secondary: { label: "Quantidade de Pagamentos", value: dadosFiltrados.length, color: "info" },
         tertiary: {
           label: "Ticket Médio",
-          value:
-            dadosFiltrados.length > 0 ? totalPago / dadosFiltrados.length : 0,
+          value: dadosFiltrados.length > 0 ? totalPago / dadosFiltrados.length : 0,
           color: "primary",
         },
       };
     }
     return {
-      primary: {
-        label: "Volume Total Negociado",
-        value: totalGeral,
-        color: "primary",
-      },
-      secondary: {
-        label: "Total Recebido",
-        value: totalPago,
-        color: "success",
-      },
-      tertiary: {
-        label: "Saldo Devedor",
-        value: totalEmAberto,
-        color: "warning",
-      },
+      primary: { label: "Volume Total Negociado", value: totalGeral, color: "primary" },
+      secondary: { label: "Total Recebido", value: totalPago, color: "success" },
+      tertiary: { label: "Saldo Devedor", value: totalEmAberto, color: "warning" },
     };
   };
 
   const cardInfo = getCardInfo();
-
-  const handleExportPDF = () => {
-    toast.success("Exportando para PDF... (demonstração)");
-  };
-
-  const handleExportExcel = () => {
-    toast.success("Exportando para Excel... (demonstração)");
-  };
-
-  // Simular toast para demonstração
-  const toast = (message) => {
-    console.log(message);
-    alert(message);
-  };
 
   return (
     <div className="space-y-6 overflow-x-hidden">
@@ -402,22 +250,6 @@ const Relatorios = () => {
           <p className="text-sm text-gray-500 mt-1">
             Gerencie relatórios financeiros e análises
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="danger"
-            onClick={handleExportPDF}
-            icon={ArrowDownTrayIcon}
-          >
-            PDF
-          </Button>
-          <Button
-            variant="success"
-            onClick={handleExportExcel}
-            icon={ArrowDownTrayIcon}
-          >
-            Excel
-          </Button>
         </div>
       </div>
 
@@ -481,8 +313,8 @@ const Relatorios = () => {
                   className="input w-full"
                 >
                   <option value="">Todas as empresas</option>
-                  {empresasMock.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
+                  {empresas.map((emp) => (
+                    <option key={emp.idEmpresa} value={emp.idEmpresa}>
                       {emp.nome}
                     </option>
                   ))}
@@ -499,15 +331,11 @@ const Relatorios = () => {
                   value={clienteId}
                   onChange={(e) => setClienteId(e.target.value)}
                   className="input w-full"
-                  disabled={
-                    !empresaId &&
-                    clientesFiltrados.length === clientesMock.length
-                  }
                 >
                   <option value="">Todos os clientes</option>
                   {clientesFiltrados.map((cli) => (
-                    <option key={cli.id} value={cli.id}>
-                      {cli.nome} - {cli.cpf}
+                    <option key={cli.idCliente} value={cli.idCliente}>
+                      {cli.nome} - {cli.cpf_Cnpj}
                     </option>
                   ))}
                 </select>
@@ -583,15 +411,7 @@ const Relatorios = () => {
                 )}
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    // Apenas para demonstrar que os filtros foram aplicados
-                    console.log("Filtros aplicados:", {
-                      empresaId,
-                      clienteId,
-                      dataInicio,
-                      dataFim,
-                    });
-                  }}
+                  onClick={handleAplicarFiltros}
                   className="flex-1"
                 >
                   Aplicar Filtros
@@ -681,7 +501,15 @@ const Relatorios = () => {
               </div>
             </CardHeader>
             <CardBody className="p-0">
-              {dadosFiltrados.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Carregando...</p>
+                </div>
+              ) : erro ? (
+                <div className="text-center py-12">
+                  <p className="text-red-500">{erro}</p>
+                </div>
+              ) : dadosFiltrados.length === 0 ? (
                 <div className="text-center py-12">
                   <DocumentTextIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">Nenhum resultado encontrado</p>
@@ -718,9 +546,9 @@ const Relatorios = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {dadosFiltrados.map((row) => (
+                      {dadosFiltrados.map((row, idx) => (
                         <tr
-                          key={row.id}
+                          key={`${row.clienteId}-${row.status}-${idx}`}
                           className="hover:bg-gray-50 transition-colors duration-150"
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -729,9 +557,7 @@ const Relatorios = () => {
                                 {row.cliente}
                               </p>
                               <p className="text-xs text-gray-400 whitespace-nowrap">
-                                {clientesMock.find(
-                                  (c) => c.id === row.clienteId
-                                )?.cpf || "-"}
+                                {row.cpf || "-"}
                               </p>
                             </div>
                           </td>
@@ -869,8 +695,8 @@ const Relatorios = () => {
                   className="input text-sm"
                 >
                   <option value="">Todas as empresas</option>
-                  {empresasMock.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
+                  {empresas.map((emp) => (
+                    <option key={emp.idEmpresa} value={emp.idEmpresa}>
                       {emp.nome}
                     </option>
                   ))}
@@ -889,7 +715,7 @@ const Relatorios = () => {
                 >
                   <option value="">Todos os clientes</option>
                   {clientesFiltrados.map((cli) => (
-                    <option key={cli.id} value={cli.id}>
+                    <option key={cli.idCliente} value={cli.idCliente}>
                       {cli.nome}
                     </option>
                   ))}
@@ -961,7 +787,7 @@ const Relatorios = () => {
                 )}
                 <Button
                   variant="primary"
-                  onClick={() => setShowMobileFilters(false)}
+                  onClick={handleAplicarFiltros}
                   className="flex-1"
                 >
                   Aplicar
