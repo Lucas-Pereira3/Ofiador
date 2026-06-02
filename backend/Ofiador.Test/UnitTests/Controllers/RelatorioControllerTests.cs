@@ -33,7 +33,9 @@ namespace Ofiador.Test.UnitTests.Controllers
                 .Setup(s =>
                     s.GetContasReceber(
                         It.IsAny<DateTime?>(),
-                        It.IsAny<DateTime?>()))
+                        It.IsAny<DateTime?>(),
+                        It.IsAny<int?>(),
+                        It.IsAny<int?>()))
                 .ThrowsAsync(
                     new Exception(
                         "Data inicial não pode ser maior que a data final"));
@@ -41,7 +43,9 @@ namespace Ofiador.Test.UnitTests.Controllers
             var result =
                 await _controller.GetContasReceber(
                     new DateTime(2025, 12, 31),
-                    new DateTime(2025, 1, 1));
+                    new DateTime(2025, 1, 1),
+                    null,
+                    null);
 
             Assert.IsType<BadRequestObjectResult>(
                 result);
@@ -67,11 +71,15 @@ namespace Ofiador.Test.UnitTests.Controllers
                 .Setup(s =>
                     s.GetContasReceber(
                         null,
+                        null,
+                        null,
                         null))
                 .ReturnsAsync(relatorio);
 
             var result =
                 await _controller.GetContasReceber(
+                    null,
+                    null,
                     null,
                     null);
 
@@ -87,12 +95,16 @@ namespace Ofiador.Test.UnitTests.Controllers
                 .Setup(s =>
                     s.GetContasReceber(
                         null,
+                        null,
+                        null,
                         null))
                 .ReturnsAsync(
                     new List<ContaReceberRelatorioDto>());
 
             var result =
                 await _controller.GetContasReceber(
+                    null,
+                    null,
                     null,
                     null);
 

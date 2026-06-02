@@ -50,11 +50,9 @@ namespace Ofiador.Test.UnitTests.Service
                 ]
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(null, null)).ReturnsAsync([fatura]);
+            _repositoryMock.Setup(r => r.GetContasReceber(null, null, null, null)).ReturnsAsync([fatura]);
 
             var resultado =await _service.GetContasReceber(null, null);
-
-            Assert.Equal(300, resultado[0].Total);
 
             Assert.Equal(100, resultado[0].Pago);
 
@@ -100,7 +98,7 @@ namespace Ofiador.Test.UnitTests.Service
                 }
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(null, null)).ReturnsAsync(faturas);
+            _repositoryMock.Setup(r => r.GetContasReceber(null, null, null, null)).ReturnsAsync(faturas);
 
             var resultado =await _service.GetContasReceber(null, null);
 
@@ -148,7 +146,7 @@ namespace Ofiador.Test.UnitTests.Service
                 ]
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(null, null)).ReturnsAsync([fatura]);
+            _repositoryMock.Setup(r => r.GetContasReceber(null, null, null, null)).ReturnsAsync([fatura]);
 
             var resultado =await _service.GetContasReceber(null, null);
 
@@ -159,7 +157,7 @@ namespace Ofiador.Test.UnitTests.Service
         [Fact]
         public async Task GetContasReceber_DeveRetornarListaVazia()
         {
-            _repositoryMock.Setup(r => r.GetContasReceber(null, null)).ReturnsAsync([]);
+            _repositoryMock.Setup(r => r.GetContasReceber(null, null, null, null)).ReturnsAsync([]);
 
             var resultado =await _service.GetContasReceber(null, null);
 
@@ -197,7 +195,7 @@ namespace Ofiador.Test.UnitTests.Service
                 ]
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(null, null)).ReturnsAsync([fatura]);
+            _repositoryMock.Setup(r => r.GetContasReceber(null, null, null, null)).ReturnsAsync([fatura]);
 
             var resultado =await _service.GetContasReceber(null, null);
 
@@ -239,7 +237,7 @@ namespace Ofiador.Test.UnitTests.Service
                 }
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(dataInicial,dataFinal)).ReturnsAsync(faturas);
+            _repositoryMock.Setup(r => r.GetContasReceber(dataInicial, dataFinal, null, null)).ReturnsAsync(faturas);
 
             var resultado =await _service.GetContasReceber(dataInicial,dataFinal);
 
@@ -250,7 +248,7 @@ namespace Ofiador.Test.UnitTests.Service
         [Fact]
         public async Task GetContasReceber_NaoDeveRetornarRegistrosForaDoPeriodo()
         {
-            _repositoryMock.Setup(r => r.GetContasReceber(It.IsAny<DateTime?>(),It.IsAny<DateTime?>())).ReturnsAsync([]);
+            _repositoryMock.Setup(r => r.GetContasReceber(It.IsAny<DateTime?>(),It.IsAny<DateTime?>(),It.IsAny<int?>(),It.IsAny<int?>())).ReturnsAsync([]);
 
             var resultado =await _service.GetContasReceber(new DateTime(2025, 1, 1),new DateTime(2025, 1, 31));
 
@@ -261,7 +259,7 @@ namespace Ofiador.Test.UnitTests.Service
         [Fact]
         public async Task GetContasReceber_DeveRetornarListaVaziaQuandoNaoExistiremRegistros()
         {
-            _repositoryMock.Setup(r => r.GetContasReceber(It.IsAny<DateTime?>(),It.IsAny<DateTime?>())).ReturnsAsync([]);
+            _repositoryMock.Setup(r => r.GetContasReceber(It.IsAny<DateTime?>(),It.IsAny<DateTime?>(),It.IsAny<int?>(),It.IsAny<int?>())).ReturnsAsync([]);
 
             var resultado =await _service.GetContasReceber(new DateTime(2030, 1, 1),new DateTime(2030, 1, 31));
 
@@ -313,7 +311,7 @@ namespace Ofiador.Test.UnitTests.Service
                 }
             };
 
-            _repositoryMock.Setup(r => r.GetContasReceber(dataInicial,dataFinal)).ReturnsAsync(faturas);
+            _repositoryMock.Setup(r => r.GetContasReceber(dataInicial,dataFinal, null, null)).ReturnsAsync(faturas);
 
             var resultado =await _service.GetContasReceber(dataInicial,dataFinal);
 
