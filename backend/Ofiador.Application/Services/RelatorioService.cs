@@ -69,6 +69,17 @@ namespace Ofiador.Application.Services
             int? empresaId = null,
             int? clienteId = null)
         {
+
+            if (dataInicial.HasValue)
+                dataInicial = DateTime.SpecifyKind(
+                    dataInicial.Value,
+                    DateTimeKind.Utc);
+
+            if (dataFinal.HasValue)
+                dataFinal = DateTime.SpecifyKind(
+                    dataFinal.Value,
+                    DateTimeKind.Utc);
+
             if (dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
                 throw new Exception("Data inicial não pode ser maior que a data final");
 
@@ -92,6 +103,17 @@ namespace Ofiador.Application.Services
             int? empresaId = null,
             int? clienteId = null)
         {
+
+            if (dataInicial.HasValue)
+                dataInicial = DateTime.SpecifyKind(
+                    dataInicial.Value,
+                    DateTimeKind.Utc);
+
+            if (dataFinal.HasValue)
+                dataFinal = DateTime.SpecifyKind(
+                    dataFinal.Value,
+                    DateTimeKind.Utc);
+
             if (dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
                 throw new Exception("Data inicial não pode ser maior que a data final");
 
@@ -115,6 +137,17 @@ namespace Ofiador.Application.Services
             int? empresaId = null,
             int? clienteId = null)
         {
+
+            if (dataInicial.HasValue)
+                dataInicial = DateTime.SpecifyKind(
+                    dataInicial.Value,
+                    DateTimeKind.Utc);
+
+            if (dataFinal.HasValue)
+                dataFinal = DateTime.SpecifyKind(
+                    dataFinal.Value,
+                    DateTimeKind.Utc);
+
             var receber = await GetContasReceber(dataInicial, dataFinal, empresaId, clienteId);
             var pagas = await GetContasPagas(dataInicial, dataFinal, empresaId, clienteId);
             return receber.Concat(pagas).ToList();

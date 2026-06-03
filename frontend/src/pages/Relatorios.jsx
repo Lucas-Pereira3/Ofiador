@@ -87,8 +87,8 @@ const Relatorios = () => {
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
-    api.get("/api/empresa").then((r) => setEmpresas(r.data)).catch(() => {});
-    api.get("/api/cliente").then((r) => setClientes(r.data)).catch(() => {});
+    api.get("/empresa").then((r) => setEmpresas(r.data)).catch(() => {});
+    api.get("/cliente").then((r) => setClientes(r.data)).catch(() => {});
   }, []);
 
   const fetchDados = useCallback(
@@ -103,10 +103,14 @@ const Relatorios = () => {
         if (clienteId) params.clienteId = clienteId;
 
         const endpointMap = {
-          receber: "/api/relatorios/contas-a-receber",
-          pagas: "/api/relatorios/contas-pagas",
-          geral: "/api/relatorios/geral",
+          receber: "/relatorios/contas-a-receber",
+          pagas: "/relatorios/contas-pagas",
+          geral: "/relatorios/geral",
         };
+
+          console.log("PARAMS:", params);
+          console.log("ENDPOINT:", endpointMap[aba]);
+
 
         const { data } = await api.get(endpointMap[aba], { params });
 
@@ -125,9 +129,16 @@ const Relatorios = () => {
         }));
 
         setDadosFiltrados(normalized);
-      } catch {
-        setErro("Erro ao carregar dados. Verifique a conexão com a API.");
-        setDadosFiltrados([]);
+      } catch (error) {
+          console.error("ERRO:", error.response?.data);
+
+          setErro(
+              error.response?.data?.erro ??
+              JSON.stringify(error.response?.data) ??
+              "Erro ao carregar dados."
+          );
+
+          setDadosFiltrados([]);
       } finally {
         setLoading(false);
       }
@@ -135,10 +146,13 @@ const Relatorios = () => {
     [abaSelecionada, dataInicio, dataFim, empresaId, clienteId]
   );
 
-  useEffect(() => {
-    fetchDados(abaSelecionada);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abaSelecionada]);
+    useEffect(() => {
+        const carregar = async () => {
+            await fetchDados(abaSelecionada);
+        };
+
+        carregar();
+    }, [fetchDados, abaSelecionada]);
 
   const abas = [
     {
