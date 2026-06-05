@@ -24,7 +24,6 @@ namespace Ofiador.Application.Services
             var pago = parcelas.Where(p => p.Pago).Sum(p => p.ValorParcela);
             var restante = total - pago;
 
-            // Próximo vencimento: menor data de vencimento das parcelas não pagas
             var hoje = DateTime.UtcNow.Date;
             var proximaParcelaVencimento = parcelas
                 .Where(p => !p.Pago)
@@ -41,11 +40,23 @@ namespace Ofiador.Application.Services
 
             string status;
             if (restante == 0)
-                status = "paga";
-            else if (diasAtraso > 0)
-                status = "atrasada";
+            {
+                status = "Pago";
+            }
+            else if (proximaParcelaVencimento.HasValue &&
+            proximaParcelaVencimento.Value < hoje)
+            {
+                status = "Atrasado";
+            }
+            else if (proximaParcelaVencimento.HasValue &&
+            proximaParcelaVencimento.Value <= hoje.AddDays(7))
+            {
+                status = "Vence em breve";
+            }
             else
-                status = "pendente";
+            {
+                status = "Em dia";
+            }
 
             return new ContaReceberRelatorioDto
             {
@@ -148,9 +159,44 @@ namespace Ofiador.Application.Services
                     dataFinal.Value,
                     DateTimeKind.Utc);
 
-            var receber = await GetContasReceber(dataInicial, dataFinal, empresaId, clienteId);
-            var pagas = await GetContasPagas(dataInicial, dataFinal, empresaId, clienteId);
-            return receber.Concat(pagas).ToList();
+            var faturas = await _repository.GetRelatorioGeral(
+            dataInicial,
+            dataFinal,
+            empresaId,
+            clienteId);
+            return faturas
+                .GroupBy(f => (
+                    f.IdCliente,
+                    f.Cliente!.Nome,
+                    f.Cliente!.Cpf_Cnpj,
+                    f.Cliente!.IdEmpresa,
+                    f.Cliente!.Empresa?.Nome ?? ""
+                ))
+                .Select(g => MapFaturas(g, false))
+                .ToList();
         }
+        public async Task<List<HistoricoPagamentoDto>> GetHistoricoPagamentos(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId = null,
+            int? clienteId = null)
+        {
+            var pagamentos = await _repository.GetHistoricoPagamentos(
+                dataInicial,
+                dataFinal,
+                empresaId,
+                clienteId);
+
+            return pagamentos.Select(p => new HistoricoPagamentoDto
+            {
+                Cliente = p.Fatura!.Cliente!.Nome,
+                Empresa = p.Fatura.Cliente.Empresa!.Nome,
+                DataPagamento = p.Data_Pagamento,
+                ValorPago = p.ValorPago,
+                MetodoPagamento = p.MetodoPagamento,
+                Status = "Pago"
+            }).ToList();
+        }
+
     }
 }
