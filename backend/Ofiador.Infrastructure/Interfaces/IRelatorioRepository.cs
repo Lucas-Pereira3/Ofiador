@@ -15,5 +15,17 @@ namespace Ofiador.Infrastructure.Interfaces
             DateTime? dataFinal,
             int? empresaId,
             int? clienteId);
+
+        Task<List<Fatura>> GetRelatorioGeral(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId);
+
+        Task<List<Pagamento>> GetHistoricoPagamentos(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId);
     }
 }
