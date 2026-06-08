@@ -84,6 +84,7 @@ builder.Services.AddScoped<ICompraService ,CompraService>();
 builder.Services.AddScoped<IPagamentoService ,PagamentoService>();
 builder.Services.AddScoped<FaturaService>();
 builder.Services.AddScoped<IRelatorioService ,RelatorioService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IJwt, Jwt>();
 //================= Repositorys =================
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -133,6 +134,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 

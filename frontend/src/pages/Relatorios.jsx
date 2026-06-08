@@ -30,33 +30,38 @@ const formatDate = (dateString) => {
   return d.toLocaleDateString("pt-BR");
 };
 
+const formatCPF = (cpf) => {
+  if (!cpf) return "-";
+  const digits = String(cpf).replace(/\D/g, "");
+  if (digits.length !== 11) return cpf || "-";
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
 const StatusBall = ({ diasAtraso, status }) => {
-  if (status === "paga") {
+  if (status === "Pago") {
     return (
       <div className="flex items-start gap-1.5 min-w-[160px]">
         <span className="inline-block w-2.5 h-2.5 rounded-full bg-success mt-1 flex-shrink-0" />
-        <span className="text-xs text-success break-words leading-tight">
-          Paga
-        </span>
+        <span className="text-xs text-success break-words leading-tight">Pago</span>
       </div>
     );
   }
-  if (diasAtraso > 7) {
+  if (status === "Atrasado") {
     return (
       <div className="flex items-start gap-1.5 min-w-[160px]">
         <span className="inline-block w-2.5 h-2.5 rounded-full bg-danger mt-1 flex-shrink-0" />
         <span className="text-xs text-danger break-words leading-tight">
-          Atrasado ({diasAtraso} dias)
+          Atrasado{diasAtraso > 0 ? ` (${diasAtraso} dias)` : ""}
         </span>
       </div>
     );
   }
-  if (diasAtraso > 0) {
+  if (status === "Vence em breve") {
     return (
       <div className="flex items-start gap-1.5 min-w-[160px]">
         <span className="inline-block w-2.5 h-2.5 rounded-full bg-warning mt-1 flex-shrink-0" />
         <span className="text-xs text-warning break-words leading-tight">
-          Vence em breve ({diasAtraso} dias)
+          Vence em breve
         </span>
       </div>
     );
@@ -64,9 +69,7 @@ const StatusBall = ({ diasAtraso, status }) => {
   return (
     <div className="flex items-start gap-1.5 min-w-[160px]">
       <span className="inline-block w-2.5 h-2.5 rounded-full bg-success mt-1 flex-shrink-0" />
-      <span className="text-xs text-success break-words leading-tight">
-        Em dia
-      </span>
+      <span className="text-xs text-success break-words leading-tight">Em dia</span>
     </div>
   );
 };
@@ -110,19 +113,36 @@ const Relatorios = () => {
 
         const { data } = await api.get(endpointMap[aba], { params });
 
-        const normalized = data.map((item) => ({
-          clienteId: item.clienteId,
-          cliente: item.nome,
-          cpf: item.cpf,
-          empresaId: item.empresaId,
-          empresa: item.empresa,
-          totalDivida: item.total,
-          valorPago: item.pago,
-          valorRestante: item.restante,
-          proximoVencimento: item.proximoVencimento,
-          diasAtraso: item.diasAtraso,
-          status: item.status,
-        }));
+        let normalized;
+        if (aba === "pagas") {
+          normalized = data.map((item) => ({
+            pagamentoId: item.pagamentoId,
+            clienteId: item.clienteId,
+            cliente: item.nome,
+            cpf: item.cpf,
+            empresaId: item.empresaId,
+            empresa: item.empresa,
+            faturaReferencia: item.faturaReferencia,
+            dataPagamento: item.dataPagamento,
+            valorPago: item.valorPago,
+            metodoPagamento: item.metodoPagamento,
+            status: item.status,
+          }));
+        } else {
+          normalized = data.map((item) => ({
+            clienteId: item.clienteId,
+            cliente: item.nome,
+            cpf: item.cpf,
+            empresaId: item.empresaId,
+            empresa: item.empresa,
+            totalDivida: item.total,
+            valorPago: item.pago,
+            valorRestante: item.restante,
+            proximoVencimento: item.proximoVencimento,
+            diasAtraso: item.diasAtraso,
+            status: item.status,
+          }));
+        }
 
         setDadosFiltrados(normalized);
       } catch {
@@ -193,6 +213,38 @@ const Relatorios = () => {
   const handleAplicarFiltros = () => {
     fetchDados(abaSelecionada);
     setShowMobileFilters(false);
+  };
+
+  const handleExportar = async (formato) => {
+    try {
+      const params = { tipo: abaSelecionada };
+      if (dataInicio) params.dataInicial = dataInicio;
+      if (dataFim) params.dataFinal = dataFim;
+      if (empresaId) params.empresaId = empresaId;
+      if (clienteId) params.clienteId = clienteId;
+
+      const response = await api.get(`/api/relatorios/exportar/${formato}`, {
+        params,
+        responseType: "blob",
+      });
+
+      const ext = formato === "pdf" ? "pdf" : "xlsx";
+      const contentType =
+        formato === "pdf"
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      const blob = new Blob([response.data], { type: contentType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-${abaSelecionada}-${new Date().toISOString().split("T")[0]}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      setErro("Erro ao exportar relatório. Tente novamente.");
+    }
   };
 
   const temFiltrosAtivos = empresaId || clienteId || dataInicio || dataFim;
@@ -374,26 +426,30 @@ const Relatorios = () => {
                   Período Personalizado
                 </label>
                 <div className="space-y-2">
-                  <input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => {
-                      setDataInicio(e.target.value);
-                      setPeriodoRapido("");
-                    }}
-                    className="input w-full"
-                    placeholder="Data inicial"
-                  />
-                  <input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => {
-                      setDataFim(e.target.value);
-                      setPeriodoRapido("");
-                    }}
-                    className="input w-full"
-                    placeholder="Data final"
-                  />
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Data Inicial</label>
+                    <input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => {
+                        setDataInicio(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Data Final</label>
+                    <input
+                      type="date"
+                      value={dataFim}
+                      onChange={(e) => {
+                        setDataFim(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -445,7 +501,7 @@ const Relatorios = () => {
         {/* Conteúdo principal */}
         <div className="flex-1 min-w-0">
           {/* Cards de totais */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className={`grid grid-cols-1 ${abaSelecionada === "geral" ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"} gap-4 mb-6`}>
             <Card className="border-l-4 border-l-primary-800">
               <CardBody className="p-4">
                 <p className="text-xs text-gray-500 mb-1">
@@ -484,20 +540,56 @@ const Relatorios = () => {
                 </p>
               </CardBody>
             </Card>
+            {abaSelecionada === "geral" && (
+              <Card className="border-l-4 border-l-blue-500">
+                <CardBody className="p-4">
+                  <p className="text-xs text-gray-500 mb-1">Taxa de Recebimento</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {totalGeral > 0
+                      ? `${((totalPago / totalGeral) * 100)
+                          .toFixed(2)
+                          .replace(".", ",")}%`
+                      : "0,00%"}
+                  </p>
+                </CardBody>
+              </Card>
+            )}
           </div>
 
           {/* Tabela de resultados */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Resultados -{" "}
-                  {abas.find((a) => a.id === abaSelecionada)?.label}
-                </h2>
-                <Badge variant="info">
-                  {dadosFiltrados.length} registro
-                  {dadosFiltrados.length !== 1 && "s"}
-                </Badge>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Resultados -{" "}
+                    {abas.find((a) => a.id === abaSelecionada)?.label}
+                  </h2>
+                  <Badge variant="info">
+                    {dadosFiltrados.length} registro
+                    {dadosFiltrados.length !== 1 && "s"}
+                  </Badge>
+                </div>
+                {dadosFiltrados.length > 0 && !loading && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportar("pdf")}
+                      icon={ArrowDownTrayIcon}
+                    >
+                      PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportar("excel")}
+                      icon={ArrowDownTrayIcon}
+                    >
+                      Excel
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardBody className="p-0">
@@ -519,121 +611,171 @@ const Relatorios = () => {
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto">
-                  <table className="w-full table-auto">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3.5 w-[20%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Cliente
-                        </th>
-                        <th className="px-4 py-3.5 w-[12%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Empresa
-                        </th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Total Dívida
-                        </th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Valor Pago
-                        </th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Saldo Devedor
-                        </th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Próximo Vencimento
-                        </th>
-                        <th className="px-4 py-3.5 min-w-[180px] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {dadosFiltrados.map((row, idx) => (
-                        <tr
-                          key={`${row.clienteId}-${row.status}-${idx}`}
-                          className="hover:bg-gray-50 transition-colors duration-150"
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">
-                                {row.cliente}
-                              </p>
-                              <p className="text-xs text-gray-400 whitespace-nowrap">
-                                {row.cpf || "-"}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge variant="default" className="bg-gray-100">
-                              {row.empresa}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                            {formatCurrency(row.totalDivida)}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-success font-medium">
-                            {formatCurrency(row.valorPago)}
-                          </td>
-                          <td
-                            className="px-6 py-4 text-sm font-semibold"
-                            style={{
-                              color:
-                                row.valorRestante === 0
-                                  ? "#108243"
-                                  : row.diasAtraso > 0
-                                  ? "#D92B14"
-                                  : "#1A2B4C",
-                            }}
-                          >
-                            {formatCurrency(row.valorRestante)}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
-                            {formatDate(row.proximoVencimento)}
-                          </td>
-                          <td className="px-6 py-4 min-w-[180px]">
-                            <StatusBall
-                              diasAtraso={row.diasAtraso}
-                              status={row.status}
-                            />
-                          </td>
+                  {abaSelecionada === "pagas" ? (
+                    <table className="w-full table-auto">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3.5 w-[20%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Cliente</th>
+                          <th className="px-4 py-3.5 w-[12%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referência</th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Data Pagamento</th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Valor Pago</th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Método</th>
+                          <th className="px-4 py-3.5 min-w-[120px] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    {/* Footer com totais */}
-                    <tfoot className="bg-gray-50 border-t border-gray-200">
-                      <tr>
-                        <td
-                          colSpan="2"
-                          className="px-6 py-3 text-sm font-semibold text-gray-700"
-                        >
-                          Totais
-                        </td>
-                        <td className="px-6 py-3 text-sm font-bold text-gray-900">
-                          {formatCurrency(
-                            dadosFiltrados.reduce(
-                              (acc, d) => acc + d.totalDivida,
-                              0
-                            )
-                          )}
-                        </td>
-                        <td className="px-6 py-3 text-sm font-bold text-success">
-                          {formatCurrency(
-                            dadosFiltrados.reduce(
-                              (acc, d) => acc + d.valorPago,
-                              0
-                            )
-                          )}
-                        </td>
-                        <td className="px-6 py-3 text-sm font-bold text-primary-800">
-                          {formatCurrency(
-                            dadosFiltrados.reduce(
-                              (acc, d) => acc + d.valorRestante,
-                              0
-                            )
-                          )}
-                        </td>
-                        <td colSpan="2" />
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {dadosFiltrados.map((row, idx) => (
+                          <tr
+                            key={`${row.pagamentoId}-${idx}`}
+                            className="hover:bg-gray-50 transition-colors duration-150"
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">{row.cliente}</p>
+                                <p className="text-xs text-gray-400 whitespace-nowrap">{formatCPF(row.cpf)}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <Badge variant="default" className="bg-gray-100">{row.empresa}</Badge>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{row.faturaReferencia}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{formatDate(row.dataPagamento)}</td>
+                            <td className="px-6 py-4 text-sm font-semibold text-success">{formatCurrency(row.valorPago)}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{row.metodoPagamento}</td>
+                            <td className="px-6 py-4">
+                              <StatusBall diasAtraso={0} status={row.status} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50 border-t border-gray-200">
+                        <tr>
+                          <td colSpan="4" className="px-6 py-3 text-sm font-semibold text-gray-700">Totais</td>
+                          <td className="px-6 py-3 text-sm font-bold text-success">
+                            {formatCurrency(dadosFiltrados.reduce((acc, d) => acc + d.valorPago, 0))}
+                          </td>
+                          <td colSpan="2" />
+                        </tr>
+                      </tfoot>
+                    </table>
+                  ) : (
+                    <table className="w-full table-auto">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3.5 w-[20%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Cliente
+                          </th>
+                          <th className="px-4 py-3.5 w-[12%] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Empresa
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Total Dívida
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Valor Pago
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Saldo Devedor
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Próximo Vencimento
+                          </th>
+                          <th className="px-4 py-3.5 min-w-[180px] text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {dadosFiltrados.map((row, idx) => (
+                          <tr
+                            key={`${row.clienteId}-${row.status}-${idx}`}
+                            className="hover:bg-gray-50 transition-colors duration-150"
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">
+                                  {row.cliente}
+                                </p>
+                                <p className="text-xs text-gray-400 whitespace-nowrap">
+                                  {formatCPF(row.cpf)}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <Badge variant="default" className="bg-gray-100">
+                                {row.empresa}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                              {formatCurrency(row.totalDivida)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-success font-medium">
+                              {formatCurrency(row.valorPago)}
+                            </td>
+                            <td
+                              className="px-6 py-4 text-sm font-semibold"
+                              style={{
+                                color:
+                                  row.valorRestante === 0
+                                    ? "#108243"
+                                    : row.diasAtraso > 0
+                                    ? "#D92B14"
+                                    : "#1A2B4C",
+                              }}
+                            >
+                              {formatCurrency(row.valorRestante)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {formatDate(row.proximoVencimento)}
+                            </td>
+                            <td className="px-6 py-4 min-w-[180px]">
+                              <StatusBall
+                                diasAtraso={row.diasAtraso}
+                                status={row.status}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      {/* Footer com totais */}
+                      <tfoot className="bg-gray-50 border-t border-gray-200">
+                        <tr>
+                          <td
+                            colSpan="2"
+                            className="px-6 py-3 text-sm font-semibold text-gray-700"
+                          >
+                            Totais
+                          </td>
+                          <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                            {formatCurrency(
+                              dadosFiltrados.reduce(
+                                (acc, d) => acc + d.totalDivida,
+                                0
+                              )
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-sm font-bold text-success">
+                            {formatCurrency(
+                              dadosFiltrados.reduce(
+                                (acc, d) => acc + d.valorPago,
+                                0
+                              )
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-sm font-bold text-primary-800">
+                            {formatCurrency(
+                              dadosFiltrados.reduce(
+                                (acc, d) => acc + d.valorRestante,
+                                0
+                              )
+                            )}
+                          </td>
+                          <td colSpan="2" />
+                        </tr>
+                      </tfoot>
+                    </table>
+                  )}
                 </div>
               )}
             </CardBody>
@@ -754,20 +896,24 @@ const Relatorios = () => {
                   Período Personalizado
                 </label>
                 <div className="space-y-2">
-                  <input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                    className="input w-full"
-                    placeholder="Data inicial"
-                  />
-                  <input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                    className="input w-full"
-                    placeholder="Data final"
-                  />
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Data Inicial</label>
+                    <input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => setDataInicio(e.target.value)}
+                      className="input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Data Final</label>
+                    <input
+                      type="date"
+                      value={dataFim}
+                      onChange={(e) => setDataFim(e.target.value)}
+                      className="input w-full"
+                    />
+                  </div>
                 </div>
               </div>
 

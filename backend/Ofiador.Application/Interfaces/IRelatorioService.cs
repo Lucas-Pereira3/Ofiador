@@ -21,5 +21,11 @@ namespace Ofiador.Application.Interfaces
             DateTime? dataFinal,
             int? empresaId = null,
             int? clienteId = null);
+
+        Task<List<PagamentoHistoricoDto>> GetHistoricoPagamentos(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId = null,
+            int? clienteId = null);
     }
 }

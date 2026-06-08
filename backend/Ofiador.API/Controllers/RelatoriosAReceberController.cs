@@ -8,10 +8,12 @@ namespace Ofiador.API.Controllers
     public class RelatoriosAReceberController : ControllerBase
     {
         private readonly IRelatorioService _service;
+        private readonly IExportService _exportService;
 
-        public RelatoriosAReceberController(IRelatorioService service)
+        public RelatoriosAReceberController(IRelatorioService service, IExportService exportService)
         {
             _service = service;
+            _exportService = exportService;
         }
 
         [HttpGet("contas-a-receber")]
@@ -42,9 +44,9 @@ namespace Ofiador.API.Controllers
         {
             try
             {
-                var relatorio = await _service.GetContasPagas(
+                var historico = await _service.GetHistoricoPagamentos(
                     dataInicial, dataFinal, empresaId, clienteId);
-                return Ok(relatorio);
+                return Ok(historico);
             }
             catch (Exception ex)
             {
@@ -64,6 +66,74 @@ namespace Ofiador.API.Controllers
                 var relatorio = await _service.GetRelatorioGeral(
                     dataInicial, dataFinal, empresaId, clienteId);
                 return Ok(relatorio);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+        }
+
+        [HttpGet("exportar/pdf")]
+        public async Task<IActionResult> ExportarPdf(
+            string tipo,
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId)
+        {
+            try
+            {
+                byte[] bytes;
+                var nomeArquivo = $"relatorio-{tipo}-{DateTime.Now:yyyyMMdd}.pdf";
+
+                if (tipo == "pagas")
+                {
+                    var dados = await _service.GetHistoricoPagamentos(dataInicial, dataFinal, empresaId, clienteId);
+                    bytes = _exportService.GerarHistoricoPagamentosPdf(dados, tipo);
+                }
+                else
+                {
+                    var dados = tipo == "receber"
+                        ? await _service.GetContasReceber(dataInicial, dataFinal, empresaId, clienteId)
+                        : await _service.GetRelatorioGeral(dataInicial, dataFinal, empresaId, clienteId);
+                    bytes = _exportService.GerarRelatorioReceberPdf(dados, tipo);
+                }
+
+                return File(bytes, "application/pdf", nomeArquivo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+        }
+
+        [HttpGet("exportar/excel")]
+        public async Task<IActionResult> ExportarExcel(
+            string tipo,
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId)
+        {
+            try
+            {
+                byte[] bytes;
+                var nomeArquivo = $"relatorio-{tipo}-{DateTime.Now:yyyyMMdd}.xlsx";
+
+                if (tipo == "pagas")
+                {
+                    var dados = await _service.GetHistoricoPagamentos(dataInicial, dataFinal, empresaId, clienteId);
+                    bytes = _exportService.GerarHistoricoPagamentosExcel(dados, tipo);
+                }
+                else
+                {
+                    var dados = tipo == "receber"
+                        ? await _service.GetContasReceber(dataInicial, dataFinal, empresaId, clienteId)
+                        : await _service.GetRelatorioGeral(dataInicial, dataFinal, empresaId, clienteId);
+                    bytes = _exportService.GerarRelatorioReceberExcel(dados, tipo);
+                }
+
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nomeArquivo);
             }
             catch (Exception ex)
             {

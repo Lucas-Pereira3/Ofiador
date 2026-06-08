@@ -12,6 +12,7 @@ namespace Ofiador.Test.UnitTests.Controllers
     public class RelatorioControllerTests
     {
         private readonly Mock<IRelatorioService> _serviceMock;
+        private readonly Mock<IExportService> _exportServiceMock;
 
         private readonly RelatoriosAReceberController _controller;
 
@@ -20,9 +21,13 @@ namespace Ofiador.Test.UnitTests.Controllers
             _serviceMock =
                 new Mock<IRelatorioService>();
 
+            _exportServiceMock =
+                new Mock<IExportService>();
+
             _controller =
                 new RelatoriosAReceberController(
-                    _serviceMock.Object);
+                    _serviceMock.Object,
+                    _exportServiceMock.Object);
         }
 
         //Intervalo inválido

@@ -75,5 +75,35 @@ namespace Ofiador.API.Repositories
 
             return await query.ToListAsync();
         }
+
+        public async Task<List<Pagamento>> GetHistoricoPagamentos(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId)
+        {
+            var query = _context.Pagamentos
+                .Include(p => p.Fatura)
+                    .ThenInclude(f => f!.Cliente)
+                        .ThenInclude(c => c!.Empresa)
+                .AsQueryable();
+
+            if (dataInicial.HasValue)
+                query = query.Where(p => p.Data_Pagamento >= dataInicial.Value);
+
+            if (dataFinal.HasValue)
+                query = query.Where(p => p.Data_Pagamento <= dataFinal.Value);
+
+            if (empresaId.HasValue)
+                query = query.Where(p => p.Fatura != null &&
+                                         p.Fatura.Cliente != null &&
+                                         p.Fatura.Cliente.IdEmpresa == empresaId.Value);
+
+            if (clienteId.HasValue)
+                query = query.Where(p => p.Fatura != null &&
+                                         p.Fatura.IdCliente == clienteId.Value);
+
+            return await query.OrderByDescending(p => p.Data_Pagamento).ToListAsync();
+        }
     }
 }

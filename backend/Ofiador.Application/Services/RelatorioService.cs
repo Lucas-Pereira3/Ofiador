@@ -16,15 +16,13 @@ namespace Ofiador.Application.Services
         }
 
         private static ContaReceberRelatorioDto MapFaturas(
-            IGrouping<(int IdCliente, string Nome, string Cpf, int EmpresaId, string Empresa), Fatura> g,
-            bool isPaga)
+            IGrouping<(int IdCliente, string Nome, string Cpf, int EmpresaId, string Empresa), Fatura> g)
         {
             var parcelas = g.SelectMany(f => f.CompraParcelas).ToList();
             var total = parcelas.Sum(p => p.ValorParcela);
             var pago = parcelas.Where(p => p.Pago).Sum(p => p.ValorParcela);
             var restante = total - pago;
 
-            // Próximo vencimento: menor data de vencimento das parcelas não pagas
             var hoje = DateTime.UtcNow.Date;
             var proximaParcelaVencimento = parcelas
                 .Where(p => !p.Pago)
@@ -41,11 +39,16 @@ namespace Ofiador.Application.Services
 
             string status;
             if (restante == 0)
-                status = "paga";
+                status = "Pago";
             else if (diasAtraso > 0)
-                status = "atrasada";
+                status = "Atrasado";
             else
-                status = "pendente";
+            {
+                int diasParaVencer = proximaParcelaVencimento.HasValue
+                    ? (int)(proximaParcelaVencimento.Value - hoje).TotalDays
+                    : int.MaxValue;
+                status = diasParaVencer <= 7 ? "Vence em breve" : "Em dia";
+            }
 
             return new ContaReceberRelatorioDto
             {
@@ -82,7 +85,7 @@ namespace Ofiador.Application.Services
                     f.Cliente!.Cpf_Cnpj,
                     f.Cliente!.IdEmpresa,
                     f.Cliente!.Empresa?.Nome ?? ""))
-                .Select(g => MapFaturas(g, false))
+                .Select(g => MapFaturas(g))
                 .ToList();
         }
 
@@ -105,7 +108,7 @@ namespace Ofiador.Application.Services
                     f.Cliente!.Cpf_Cnpj,
                     f.Cliente!.IdEmpresa,
                     f.Cliente!.Empresa?.Nome ?? ""))
-                .Select(g => MapFaturas(g, true))
+                .Select(g => MapFaturas(g))
                 .ToList();
         }
 
@@ -117,7 +120,77 @@ namespace Ofiador.Application.Services
         {
             var receber = await GetContasReceber(dataInicial, dataFinal, empresaId, clienteId);
             var pagas = await GetContasPagas(dataInicial, dataFinal, empresaId, clienteId);
-            return receber.Concat(pagas).ToList();
+
+            var hoje = DateTime.UtcNow.Date;
+
+            return receber.Concat(pagas)
+                .GroupBy(d => (d.ClienteId, d.EmpresaId))
+                .Select(g =>
+                {
+                    var totalDivida = g.Sum(d => d.Total);
+                    var totalPago = g.Sum(d => d.Pago);
+                    var totalRestante = g.Sum(d => d.Restante);
+
+                    var proximoVenc = g
+                        .Where(d => d.ProximoVencimento.HasValue)
+                        .Select(d => d.ProximoVencimento)
+                        .OrderBy(d => d)
+                        .FirstOrDefault();
+
+                    var maxDiasAtraso = g.Max(d => d.DiasAtraso);
+
+                    string status;
+                    if (totalRestante == 0)
+                        status = "Pago";
+                    else if (maxDiasAtraso > 0)
+                        status = "Atrasado";
+                    else if (proximoVenc.HasValue && (proximoVenc.Value - hoje).TotalDays <= 7)
+                        status = "Vence em breve";
+                    else
+                        status = "Em dia";
+
+                    var first = g.First();
+                    return new ContaReceberRelatorioDto
+                    {
+                        ClienteId = first.ClienteId,
+                        Nome = first.Nome,
+                        Cpf = first.Cpf,
+                        EmpresaId = first.EmpresaId,
+                        Empresa = first.Empresa,
+                        Total = totalDivida,
+                        Pago = totalPago,
+                        Restante = totalRestante,
+                        ProximoVencimento = proximoVenc,
+                        DiasAtraso = maxDiasAtraso,
+                        Status = status
+                    };
+                })
+                .ToList();
+        }
+
+        public async Task<List<PagamentoHistoricoDto>> GetHistoricoPagamentos(
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId = null,
+            int? clienteId = null)
+        {
+            var pagamentos = await _repository.GetHistoricoPagamentos(
+                dataInicial, dataFinal, empresaId, clienteId);
+
+            return pagamentos.Select(p => new PagamentoHistoricoDto
+            {
+                PagamentoId = p.IdPagamento,
+                ClienteId = p.Fatura?.Cliente?.IdCliente ?? 0,
+                Nome = p.Fatura?.Cliente?.Nome ?? "",
+                Cpf = p.Fatura?.Cliente?.Cpf_Cnpj ?? "",
+                EmpresaId = p.Fatura?.Cliente?.IdEmpresa ?? 0,
+                Empresa = p.Fatura?.Cliente?.Empresa?.Nome ?? "",
+                FaturaReferencia = p.Fatura?.MesReferencia.ToString("MM/yyyy") ?? "",
+                DataPagamento = p.Data_Pagamento,
+                ValorPago = p.ValorPago,
+                MetodoPagamento = p.MetodoPagamento,
+                Status = "Pago"
+            }).ToList();
         }
     }
 }
