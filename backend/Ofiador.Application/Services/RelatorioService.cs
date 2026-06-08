@@ -108,39 +108,6 @@ namespace Ofiador.Application.Services
                 .ToList();
         }
 
-        public async Task<List<ContaReceberRelatorioDto>> GetContasPagas(
-            DateTime? dataInicial,
-            DateTime? dataFinal,
-            int? empresaId = null,
-            int? clienteId = null)
-        {
-
-            if (dataInicial.HasValue)
-                dataInicial = DateTime.SpecifyKind(
-                    dataInicial.Value,
-                    DateTimeKind.Utc);
-
-            if (dataFinal.HasValue)
-                dataFinal = DateTime.SpecifyKind(
-                    dataFinal.Value,
-                    DateTimeKind.Utc);
-
-            if (dataInicial.HasValue && dataFinal.HasValue && dataInicial > dataFinal)
-                throw new Exception("Data inicial não pode ser maior que a data final");
-
-            var faturas = await _repository.GetContasPagas(
-                dataInicial, dataFinal, empresaId, clienteId);
-
-            return faturas
-                .GroupBy(f => (
-                    f.IdCliente,
-                    f.Cliente!.Nome,
-                    f.Cliente!.Cpf_Cnpj,
-                    f.Cliente!.IdEmpresa,
-                    f.Cliente!.Empresa?.Nome ?? ""))
-                .Select(g => MapFaturas(g, true))
-                .ToList();
-        }
 
         public async Task<List<ContaReceberRelatorioDto>> GetRelatorioGeral(
             DateTime? dataInicial,

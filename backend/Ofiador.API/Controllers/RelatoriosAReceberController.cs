@@ -37,24 +37,6 @@ namespace Ofiador.API.Controllers
             }
         }
 
-        [HttpGet("contas-pagas")]
-        public async Task<IActionResult> GetContasPagas(
-            DateTime? dataInicial,
-            DateTime? dataFinal,
-            int? empresaId,
-            int? clienteId)
-        {
-            try
-            {
-                var relatorio = await _service.GetContasPagas(
-                    dataInicial, dataFinal, empresaId, clienteId);
-                return Ok(relatorio);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { erro = ex.Message });
-            }
-        }
         [HttpGet("historico-pagamentos")]
         public async Task<IActionResult> GetHistoricoPagamentos(
             DateTime? dataInicial,

@@ -10,11 +10,6 @@ namespace Ofiador.Application.Interfaces
             int? empresaId = null,
             int? clienteId = null);
 
-        Task<List<ContaReceberRelatorioDto>> GetContasPagas(
-            DateTime? dataInicial,
-            DateTime? dataFinal,
-            int? empresaId = null,
-            int? clienteId = null);
 
         Task<List<ContaReceberRelatorioDto>> GetRelatorioGeral(
             DateTime? dataInicial,
