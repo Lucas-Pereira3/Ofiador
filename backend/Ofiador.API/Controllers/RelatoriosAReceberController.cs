@@ -1,5 +1,8 @@
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
+using Ofiador.Application.DTOs;
 using Ofiador.Application.Interfaces;
+using QuestPDF.Fluent;
 
 namespace Ofiador.API.Controllers
 {
@@ -92,6 +95,410 @@ namespace Ofiador.API.Controllers
                 return BadRequest(new { erro = ex.Message });
             }
         }
-        
+
+        [HttpGet("export/excel")]
+        public async Task<IActionResult> ExportarExcel(
+            string tipoRelatorio,
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId)
+        {
+            using var workbook = new XLWorkbook();
+
+            switch (tipoRelatorio.ToLower())
+            {
+                case "receber":
+
+                    var receber = await _service.GetContasReceber(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    GerarExcelReceber(workbook, receber);
+
+                    break;
+
+                case "pagas":
+
+                    var pagas = await _service.GetHistoricoPagamentos(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    GerarExcelPagas(workbook, pagas);
+
+                    break;
+
+                default:
+
+                    var geral = await _service.GetRelatorioGeral(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    GerarExcelGeral(workbook, geral);
+
+                    break;
+            }
+
+            using var stream = new MemoryStream();
+
+            workbook.SaveAs(stream);
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"{tipoRelatorio}.xlsx");
+        }     
+        private void GerarExcelReceber(
+        XLWorkbook workbook,
+        List<ContaReceberRelatorioDto> dados)
+        {
+            var ws = workbook.Worksheets.Add("Contas Receber");
+
+            ws.Cell(1, 1).Value = "Cliente";
+            ws.Cell(1, 2).Value = "Empresa";
+            ws.Cell(1, 3).Value = "Total Dívida";
+            ws.Cell(1, 4).Value = "Valor Pago";
+            ws.Cell(1, 5).Value = "Saldo Devedor";
+            ws.Cell(1, 6).Value = "Status";
+
+            int linha = 2;
+
+            foreach (var item in dados)
+            {
+                ws.Cell(linha, 1).Value = item.Nome;
+                ws.Cell(linha, 2).Value = item.Empresa;
+                ws.Cell(linha, 3).Value = item.Total;
+                ws.Cell(linha, 4).Value = item.Pago;
+                ws.Cell(linha, 5).Value = item.Restante;
+                ws.Cell(linha, 6).Value = item.Status;
+
+                linha++;
+            }
+
+            ws.Columns().AdjustToContents();
+        }
+        private void GerarExcelPagas(
+    XLWorkbook workbook,
+    List<HistoricoPagamentoDto> dados)
+        {
+            var ws = workbook.Worksheets.Add("Histórico");
+
+            ws.Cell(1, 1).Value = "Cliente";
+            ws.Cell(1, 2).Value = "Empresa";
+            ws.Cell(1, 3).Value = "Data Pagamento";
+            ws.Cell(1, 4).Value = "Valor Pago";
+            ws.Cell(1, 5).Value = "Método";
+            ws.Cell(1, 6).Value = "Status";
+
+            int linha = 2;
+
+            foreach (var item in dados)
+            {
+                ws.Cell(linha, 1).Value = item.Cliente;
+                ws.Cell(linha, 2).Value = item.Empresa;
+                ws.Cell(linha, 3).Value = item.DataPagamento;
+                ws.Cell(linha, 4).Value = item.ValorPago;
+                ws.Cell(linha, 5).Value = item.MetodoPagamento;
+                ws.Cell(linha, 6).Value = item.Status;
+
+                linha++;
+            }
+
+            ws.Columns().AdjustToContents();
+        }
+        private void GerarExcelGeral(
+    XLWorkbook workbook,
+    List<ContaReceberRelatorioDto> dados)
+        {
+            var ws = workbook.Worksheets.Add("Relatório Geral");
+
+            ws.Cell(1, 1).Value = "Cliente";
+            ws.Cell(1, 2).Value = "Empresa";
+            ws.Cell(1, 3).Value = "Total Dívida";
+            ws.Cell(1, 4).Value = "Valor Pago";
+            ws.Cell(1, 5).Value = "Saldo Devedor";
+            ws.Cell(1, 6).Value = "Próximo Vencimento";
+            ws.Cell(1, 7).Value = "Status";
+
+            int linha = 2;
+
+            foreach (var item in dados)
+            {
+                ws.Cell(linha, 1).Value = item.Nome;
+                ws.Cell(linha, 2).Value = item.Empresa;
+                ws.Cell(linha, 3).Value = item.Total;
+                ws.Cell(linha, 4).Value = item.Pago;
+                ws.Cell(linha, 5).Value = item.Restante;
+                ws.Cell(linha, 6).Value = item.ProximoVencimento;
+                ws.Cell(linha, 7).Value = item.Status;
+
+                linha++;
+            }
+
+            ws.Columns().AdjustToContents();
+        }
+
+
+        [HttpGet("export/pdf")]
+        public async Task<IActionResult> ExportarPdf(
+            string tipoRelatorio,
+            DateTime? dataInicial,
+            DateTime? dataFinal,
+            int? empresaId,
+            int? clienteId)
+        {
+            string titulo;
+
+            byte[] pdf;
+
+            switch (tipoRelatorio.ToLower())
+            {
+                case "receber":
+
+                    var receber = await _service
+                        .GetContasReceber(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    titulo = "Contas a Receber";
+
+                    pdf = GerarPdfReceber(
+                        titulo,
+                        receber);
+
+                    break;
+
+                case "pagas":
+
+                    var pagas = await _service
+                        .GetHistoricoPagamentos(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    titulo = "Histórico de Pagamentos";
+
+                    pdf = GerarPdfPagas(
+                        titulo,
+                        pagas);
+
+                    break;
+
+                default:
+
+                    var geral = await _service
+                        .GetRelatorioGeral(
+                        dataInicial,
+                        dataFinal,
+                        empresaId,
+                        clienteId);
+
+                    titulo = "Relatório Geral";
+
+                    pdf = GerarPdfGeral(
+                        titulo,
+                        geral);
+
+                    break;
+            }
+
+            return File(
+                pdf,
+                "application/pdf",
+                $"{tipoRelatorio}.pdf");
+        }
+
+        private byte[] GerarPdfReceber(
+            string titulo,
+            List<ContaReceberRelatorioDto> dados)
+        {
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(20);
+
+                    page.Header()
+                        .Column(column =>
+                        {
+                            column.Item()
+                                .Text(titulo)
+                                .FontSize(20)
+                                .Bold();
+
+                            column.Item()
+                                .Text(
+                                $"Gerado em {DateTime.Now:dd/MM/yyyy HH:mm}");
+                        });
+
+                    page.Content()
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Cliente");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Empresa");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Total");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Pago");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Restante");
+                            });
+
+                            foreach (var item in dados)
+                            {
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(item.Nome);
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(item.Empresa);
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text($"R$ {item.Total:N2}");
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text($"R$ {item.Pago:N2}");
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text($"R$ {item.Restante:N2}");
+                            }
+                        });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Página ");
+                            x.CurrentPageNumber();
+                            x.Span(" de ");
+                            x.TotalPages();
+                        });
+                });
+            }).GeneratePdf();
+        }
+
+        private byte[] GerarPdfGeral(
+            string titulo,
+            List<ContaReceberRelatorioDto> dados)
+        {
+            return GerarPdfReceber(
+                titulo,
+                dados);
+        }
+
+        private byte[] GerarPdfPagas(
+            string titulo,
+            List<HistoricoPagamentoDto> dados)
+        {
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(20);
+
+                    page.Header()
+                        .Column(column =>
+                        {
+                            column.Item()
+                                .Text(titulo)
+                                .FontSize(20)
+                                .Bold();
+
+                            column.Item()
+                                .Text(
+                                $"Gerado em {DateTime.Now:dd/MM/yyyy HH:mm}");
+                        });
+
+                    page.Content()
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Cliente");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Empresa");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Data");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Valor Pago");
+
+                                header.Cell().Border(1).Padding(5)
+                                    .Text("Método");
+                            });
+
+                            foreach (var item in dados)
+                            {
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(item.Cliente);
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(item.Empresa);
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(
+                                    item.DataPagamento
+                                    .ToString("dd/MM/yyyy"));
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(
+                                    $"R$ {item.ValorPago:N2}");
+
+                                table.Cell().Border(1).Padding(5)
+                                    .Text(
+                                    item.MetodoPagamento);
+                            }
+                        });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Página ");
+                            x.CurrentPageNumber();
+                            x.Span(" de ");
+                            x.TotalPages();
+                        });
+                });
+            }).GeneratePdf();
+        }
     }
 }
+
