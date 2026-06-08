@@ -11,8 +11,11 @@ using Ofiador.Infrastructure.Interfaces;
 using Ofiador.API.Controllers;
 using Ofiador.API.Repositories;
 using Ofiador.Application.Interfaces;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
