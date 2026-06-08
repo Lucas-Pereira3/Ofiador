@@ -30,6 +30,19 @@ const formatDate = (dateString) => {
   return d.toLocaleDateString("pt-BR");
 };
 
+const formatCpf = (cpf) => {
+  if (!cpf) return "-";
+
+  const numeros = cpf.replace(/\D/g, "");
+
+  if (numeros.length !== 11) return cpf;
+
+  return numeros.replace(
+    /(\d{3})(\d{3})(\d{3})(\d{2})/,
+    "$1.$2.$3-$4"
+  );
+};
+
 const StatusBall = ({ diasAtraso, status }) => {
   if (status === "paga") {
     return (
@@ -86,6 +99,66 @@ const Relatorios = () => {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
 
+  const exportarPdf = async () => {
+    try {
+      const params = {
+        tipoRelatorio: abaSelecionada,
+      };
+
+      if (dataInicio) params.dataInicial = dataInicio;
+      if (dataFim) params.dataFinal = dataFim;
+      if (empresaId) params.empresaId = empresaId;
+      if (clienteId) params.clienteId = clienteId;
+
+      const response = await api.get("/relatorios/export/pdf", {
+        params,
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${abaSelecionada}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const exportarExcel = async () => {
+    try {
+      const params = {
+        tipoRelatorio: abaSelecionada,
+      };
+
+      if (dataInicio) params.dataInicial = dataInicio;
+      if (dataFim) params.dataFinal = dataFim;
+      if (empresaId) params.empresaId = empresaId;
+      if (clienteId) params.clienteId = clienteId;
+
+      const response = await api.get("/relatorios/export/excel", {
+        params,
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${abaSelecionada}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     api.get("/empresa").then((r) => setEmpresas(r.data)).catch(() => {});
     api.get("/cliente").then((r) => setClientes(r.data)).catch(() => {});
@@ -104,7 +177,7 @@ const Relatorios = () => {
 
         const endpointMap = {
           receber: "/relatorios/contas-a-receber",
-          pagas: "/relatorios/contas-pagas",
+          pagas: "/relatorios/historico-pagamentos",
           geral: "/relatorios/geral",
         };
 
@@ -113,6 +186,11 @@ const Relatorios = () => {
 
 
         const { data } = await api.get(endpointMap[aba], { params });
+
+        if (aba === "pagas") {
+          setDadosFiltrados(data);
+          return;
+        }
 
         const normalized = data.map((item) => ({
           clienteId: item.clienteId,
@@ -216,14 +294,27 @@ const Relatorios = () => {
     return clientes.filter((c) => c.idEmpresa === parseInt(empresaId));
   }, [empresaId, clientes]);
 
-  const totalEmAberto = dadosFiltrados.reduce((acc, d) => acc + d.valorRestante, 0);
-  const totalPago = dadosFiltrados.reduce((acc, d) => acc + d.valorPago, 0);
-  const totalPendente = dadosFiltrados.reduce(
-    (acc, d) =>
-      acc + (d.diasAtraso > 0 && d.status !== "paga" ? d.valorRestante : 0),
+  const totalEmAberto = dadosFiltrados.reduce(
+    (acc, d) => acc + (Number(d.valorRestante) || 0),
     0
   );
-  const totalGeral = dadosFiltrados.reduce((acc, d) => acc + d.totalDivida, 0);
+  const totalPago = dadosFiltrados.reduce(
+    (acc, d) => acc + (Number(d.valorPago) || 0),
+    0
+  );
+  const totalPendente = dadosFiltrados.reduce(
+    (acc, d) =>
+      acc +
+      (d.diasAtraso > 0 && d.status !== "paga"
+        ? Number(d.valorRestante) || 0
+        : 0),
+    0
+  );
+  const totalGeral = dadosFiltrados.reduce(
+    (acc, d) => acc + (Number(d.totalDivida) || 0),
+    0
+  );
+  const taxaRecebimento = totalGeral > 0 ? (totalPago / totalGeral) * 100 : 0;
 
   const getCardInfo = () => {
     if (abaSelecionada === "receber") {
@@ -387,27 +478,39 @@ const Relatorios = () => {
                   <CalendarIcon className="h-4 w-4 inline mr-1" />
                   Período Personalizado
                 </label>
-                <div className="space-y-2">
-                  <input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => {
-                      setDataInicio(e.target.value);
-                      setPeriodoRapido("");
-                    }}
-                    className="input w-full"
-                    placeholder="Data inicial"
-                  />
-                  <input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => {
-                      setDataFim(e.target.value);
-                      setPeriodoRapido("");
-                    }}
-                    className="input w-full"
-                    placeholder="Data final"
-                  />
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Data Inicial
+                    </label>
+
+                    <input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => {
+                        setDataInicio(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Data Final
+                    </label>
+
+                    <input
+                      type="date"
+                      value={dataFim}
+                      onChange={(e) => {
+                        setDataFim(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -459,7 +562,11 @@ const Relatorios = () => {
         {/* Conteúdo principal */}
         <div className="flex-1 min-w-0">
           {/* Cards de totais */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div
+            className={`grid grid-cols-1 ${
+              abaSelecionada === "geral" ? "md:grid-cols-4" : "md:grid-cols-3"
+            } gap-4 mb-6`}
+          >
             <Card className="border-l-4 border-l-primary-800">
               <CardBody className="p-4">
                 <p className="text-xs text-gray-500 mb-1">
@@ -498,6 +605,19 @@ const Relatorios = () => {
                 </p>
               </CardBody>
             </Card>
+            {abaSelecionada === "geral" && (
+              <Card className="border-l-4 border-l-info">
+                <CardBody className="p-4">
+                  <p className="text-xs text-gray-500 mb-1">
+                    Taxa de Recebimento
+                  </p>
+
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {taxaRecebimento.toFixed(2)}%
+                  </p>
+                </CardBody>
+              </Card>
+            )}
           </div>
 
           {/* Tabela de resultados */}
@@ -508,10 +628,32 @@ const Relatorios = () => {
                   Resultados -{" "}
                   {abas.find((a) => a.id === abaSelecionada)?.label}
                 </h2>
-                <Badge variant="info">
-                  {dadosFiltrados.length} registro
-                  {dadosFiltrados.length !== 1 && "s"}
-                </Badge>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={exportarPdf}
+                    icon={ArrowDownTrayIcon}
+                    disabled={loading}
+                    className="bg-red-500 text-black hover:bg-red-600 border border-red-600"
+                  >
+                    PDF
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={exportarExcel}
+                    icon={ArrowDownTrayIcon}
+                    disabled={loading}
+                    className="bg-green-500 text-black hover:bg-green-600 border border-green-600"
+                  >
+                    Excel
+                  </Button>
+
+                  <Badge variant="info">
+                    {dadosFiltrados.length} registro
+                    {dadosFiltrados.length !== 1 && "s"}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardBody className="p-0">
@@ -533,6 +675,61 @@ const Relatorios = () => {
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto">
+                  {abaSelecionada === "pagas" ? (
+                    <table className="w-full table-auto">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Cliente
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Empresa
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Data Pagamento
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Valor Pago
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Método
+                          </th>
+                          <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {dadosFiltrados.map((row, index) => (
+                          <tr
+                            key={`${row.cliente}-${row.dataPagamento}-${index}`}
+                            className="hover:bg-gray-50 transition-colors duration-150"
+                          >
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+                              {row.cliente}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <Badge variant="default" className="bg-gray-100">
+                                {row.empresa}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                              {formatDate(row.dataPagamento)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-success font-medium whitespace-nowrap">
+                              {formatCurrency(row.valorPago)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                              {row.metodoPagamento || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                              {row.status || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
                   <table className="w-full table-auto">
                     <thead className="bg-gray-50">
                       <tr>
@@ -571,7 +768,7 @@ const Relatorios = () => {
                                 {row.cliente}
                               </p>
                               <p className="text-xs text-gray-400 whitespace-nowrap">
-                                {row.cpf || "-"}
+                               {formatCpf(row.cpf)}
                               </p>
                             </div>
                           </td>
@@ -623,7 +820,7 @@ const Relatorios = () => {
                         <td className="px-6 py-3 text-sm font-bold text-gray-900">
                           {formatCurrency(
                             dadosFiltrados.reduce(
-                              (acc, d) => acc + d.totalDivida,
+                              (acc, d) => acc + (Number(d.totalDivida) || 0),
                               0
                             )
                           )}
@@ -631,7 +828,7 @@ const Relatorios = () => {
                         <td className="px-6 py-3 text-sm font-bold text-success">
                           {formatCurrency(
                             dadosFiltrados.reduce(
-                              (acc, d) => acc + d.valorPago,
+                              (acc, d) => acc + (Number(d.valorPago) || 0),
                               0
                             )
                           )}
@@ -639,7 +836,7 @@ const Relatorios = () => {
                         <td className="px-6 py-3 text-sm font-bold text-primary-800">
                           {formatCurrency(
                             dadosFiltrados.reduce(
-                              (acc, d) => acc + d.valorRestante,
+                              (acc, d) => acc + (Number(d.valorRestante) || 0),
                               0
                             )
                           )}
@@ -648,6 +845,7 @@ const Relatorios = () => {
                       </tr>
                     </tfoot>
                   </table>
+                  )}
                 </div>
               )}
             </CardBody>
@@ -767,21 +965,38 @@ const Relatorios = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Período Personalizado
                 </label>
-                <div className="space-y-2">
-                  <input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                    className="input w-full"
-                    placeholder="Data inicial"
-                  />
-                  <input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                    className="input w-full"
-                    placeholder="Data final"
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Data Inicial
+                    </label>
+
+                    <input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => {
+                        setDataInicio(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Data Final
+                    </label>
+
+                    <input
+                      type="date"
+                      value={dataFim}
+                      onChange={(e) => {
+                        setDataFim(e.target.value);
+                        setPeriodoRapido("");
+                      }}
+                      className="input w-full"
+                    />
+                  </div>
                 </div>
               </div>
 

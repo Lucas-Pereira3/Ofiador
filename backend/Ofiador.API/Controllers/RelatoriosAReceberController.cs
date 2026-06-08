@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Ofiador.Application.DTOs;
 using Ofiador.Application.Interfaces;
 using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
 
 namespace Ofiador.API.Controllers
 {
@@ -325,22 +326,17 @@ namespace Ofiador.API.Controllers
             {
                 container.Page(page =>
                 {
-                    page.Margin(20);
+                    page.Margin(28);
+                    page.DefaultTextStyle(x => x.FontSize(9).FontColor("#111827"));
 
                     page.Header()
-                        .Column(column =>
-                        {
-                            column.Item()
-                                .Text(titulo)
-                                .FontSize(20)
-                                .Bold();
-
-                            column.Item()
-                                .Text(
-                                $"Gerado em {DateTime.Now:dd/MM/yyyy HH:mm}");
-                        });
+                        .Element(c => CriarCabecalhoPdf(
+                            c,
+                            titulo,
+                            "Relatorio financeiro gerado pelo Ofiador"));
 
                     page.Content()
+                        .PaddingTop(14)
                         .Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
@@ -354,37 +350,37 @@ namespace Ofiador.API.Controllers
 
                             table.Header(header =>
                             {
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Cliente");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Empresa");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Total");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Pago");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Restante");
                             });
 
                             foreach (var item in dados)
                             {
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(item.Nome);
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(item.Empresa);
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text($"R$ {item.Total:N2}");
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text($"R$ {item.Pago:N2}");
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text($"R$ {item.Restante:N2}");
                             }
                         });
@@ -419,22 +415,17 @@ namespace Ofiador.API.Controllers
             {
                 container.Page(page =>
                 {
-                    page.Margin(20);
+                    page.Margin(28);
+                    page.DefaultTextStyle(x => x.FontSize(9).FontColor("#111827"));
 
                     page.Header()
-                        .Column(column =>
-                        {
-                            column.Item()
-                                .Text(titulo)
-                                .FontSize(20)
-                                .Bold();
-
-                            column.Item()
-                                .Text(
-                                $"Gerado em {DateTime.Now:dd/MM/yyyy HH:mm}");
-                        });
+                        .Element(c => CriarCabecalhoPdf(
+                            c,
+                            titulo,
+                            "Historico de pagamentos exportado pelo Ofiador"));
 
                     page.Content()
+                        .PaddingTop(14)
                         .Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
@@ -448,40 +439,40 @@ namespace Ofiador.API.Controllers
 
                             table.Header(header =>
                             {
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Cliente");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Empresa");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Data");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Valor Pago");
 
-                                header.Cell().Border(1).Padding(5)
+                                header.Cell().Element(CriarCelulaCabecalhoPdf)
                                     .Text("Método");
                             });
 
                             foreach (var item in dados)
                             {
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(item.Cliente);
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(item.Empresa);
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(
                                     item.DataPagamento
                                     .ToString("dd/MM/yyyy"));
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(
                                     $"R$ {item.ValorPago:N2}");
 
-                                table.Cell().Border(1).Padding(5)
+                                table.Cell().Element(CriarCelulaTabelaPdf)
                                     .Text(
                                     item.MetodoPagamento);
                             }
@@ -498,6 +489,79 @@ namespace Ofiador.API.Controllers
                         });
                 });
             }).GeneratePdf();
+        }
+
+        private static void CriarCabecalhoPdf(
+            IContainer container,
+            string titulo,
+            string subtitulo)
+        {
+            container
+                .Background("#1A2B4C")
+                .Padding(16)
+                .Row(row =>
+                {
+                    row.RelativeItem()
+                        .Column(column =>
+                        {
+                            column.Item()
+                                .Text("OFIADOR")
+                                .FontSize(18)
+                                .Bold()
+                                .FontColor("#FFFFFF");
+
+                            column.Item()
+                                .PaddingTop(2)
+                                .Text("Sistema de Gestao")
+                                .FontSize(9)
+                                .FontColor("#CBD5E1");
+                        });
+
+                    row.RelativeItem()
+                        .AlignRight()
+                        .Column(column =>
+                        {
+                            column.Item()
+                                .AlignRight()
+                                .Text(titulo)
+                                .FontSize(16)
+                                .Bold()
+                                .FontColor("#FFFFFF");
+
+                            column.Item()
+                                .PaddingTop(3)
+                                .AlignRight()
+                                .Text(subtitulo)
+                                .FontSize(8)
+                                .FontColor("#CBD5E1");
+
+                            column.Item()
+                                .PaddingTop(6)
+                                .AlignRight()
+                                .Text($"Gerado em {DateTime.Now:dd/MM/yyyy HH:mm}")
+                                .FontSize(8)
+                                .FontColor("#E2E8F0");
+                        });
+                });
+        }
+
+        private static IContainer CriarCelulaCabecalhoPdf(IContainer container)
+        {
+            return container
+                .Background("#E8EEF7")
+                .BorderBottom(1)
+                .BorderColor("#CBD5E1")
+                .PaddingVertical(7)
+                .PaddingHorizontal(6);
+        }
+
+        private static IContainer CriarCelulaTabelaPdf(IContainer container)
+        {
+            return container
+                .BorderBottom(1)
+                .BorderColor("#E5E7EB")
+                .PaddingVertical(6)
+                .PaddingHorizontal(6);
         }
     }
 }
