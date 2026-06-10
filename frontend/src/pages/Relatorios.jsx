@@ -317,29 +317,66 @@ const Relatorios = () => {
   const taxaRecebimento = totalGeral > 0 ? (totalPago / totalGeral) * 100 : 0;
 
   const getCardInfo = () => {
-    if (abaSelecionada === "receber") {
+      if (abaSelecionada === "receber") {
+          return {
+              primary: {
+                  label: "Total a Receber",
+                  value: totalEmAberto,
+                  isCurrency: true,
+              },
+              secondary: {
+                  label: "Total Pendente (Atrasado)",
+                  value: totalPendente,
+                  isCurrency: true,
+              },
+              tertiary: {
+                  label: "Quantidade de Faturas",
+                  value: dadosFiltrados.length,
+                  isCurrency: false,
+              },
+          };
+      }
+
+      if (abaSelecionada === "pagas") {
+          return {
+              primary: {
+                  label: "Total Recebido",
+                  value: totalPago,
+                  isCurrency: true,
+              },
+              secondary: {
+                  label: "Quantidade de Pagamentos",
+                  value: dadosFiltrados.length,
+                  isCurrency: false,
+              },
+              tertiary: {
+                  label: "Ticket Médio",
+                  value:
+                      dadosFiltrados.length > 0
+                          ? totalPago / dadosFiltrados.length
+                          : 0,
+                  isCurrency: true,
+              },
+          };
+      }
+
       return {
-        primary: { label: "Total a Receber", value: totalEmAberto, color: "primary" },
-        secondary: { label: "Total Pendente (Atrasado)", value: totalPendente, color: "danger" },
-        tertiary: { label: "Quantidade de Faturas", value: dadosFiltrados.length, color: "info" },
+          primary: {
+              label: "Volume Total Negociado",
+              value: totalGeral,
+              isCurrency: true,
+          },
+          secondary: {
+              label: "Total Recebido",
+              value: totalPago,
+              isCurrency: true,
+          },
+          tertiary: {
+              label: "Saldo Devedor",
+              value: totalEmAberto,
+              isCurrency: true,
+          },
       };
-    }
-    if (abaSelecionada === "pagas") {
-      return {
-        primary: { label: "Total Recebido", value: totalPago, color: "success" },
-        secondary: { label: "Quantidade de Pagamentos", value: dadosFiltrados.length, color: "info" },
-        tertiary: {
-          label: "Ticket Médio",
-          value: dadosFiltrados.length > 0 ? totalPago / dadosFiltrados.length : 0,
-          color: "primary",
-        },
-      };
-    }
-    return {
-      primary: { label: "Volume Total Negociado", value: totalGeral, color: "primary" },
-      secondary: { label: "Total Recebido", value: totalPago, color: "success" },
-      tertiary: { label: "Saldo Devedor", value: totalEmAberto, color: "warning" },
-    };
   };
 
   const cardInfo = getCardInfo();
@@ -573,9 +610,9 @@ const Relatorios = () => {
                   {cardInfo.primary.label}
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {typeof cardInfo.primary.value === "number"
-                    ? formatCurrency(cardInfo.primary.value)
-                    : cardInfo.primary.value}
+                    {cardInfo.primary.isCurrency
+                        ? formatCurrency(cardInfo.primary.value)
+                        : cardInfo.primary.value}
                 </p>
               </CardBody>
             </Card>
@@ -585,9 +622,9 @@ const Relatorios = () => {
                   {cardInfo.secondary.label}
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {typeof cardInfo.secondary.value === "number"
-                    ? formatCurrency(cardInfo.secondary.value)
-                    : cardInfo.secondary.value}
+                    {cardInfo.secondary.isCurrency
+                        ? formatCurrency(cardInfo.secondary.value)
+                        : cardInfo.secondary.value}
                 </p>
               </CardBody>
             </Card>
@@ -597,11 +634,9 @@ const Relatorios = () => {
                   {cardInfo.tertiary.label}
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {typeof cardInfo.tertiary.value === "number"
-                    ? cardInfo.tertiary.label.includes("Ticket Médio")
-                      ? formatCurrency(cardInfo.tertiary.value)
-                      : cardInfo.tertiary.value
-                    : cardInfo.tertiary.value}
+                    {cardInfo.tertiary.isCurrency
+                        ? formatCurrency(cardInfo.tertiary.value)
+                        : cardInfo.tertiary.value}
                 </p>
               </CardBody>
             </Card>
